@@ -1,0 +1,17 @@
+export const ADMIN_PATHS = {
+  DASHBOARD: '/admin',
+  DOCTORS: '/admin/doctors',
+  DOCTOR_PENDING: '/admin/doctors/pending',
+  DOCTOR_DETAILS: '/admin/doctors/:id',
+  PATIENTS: '/admin/patients',
+  PATIENT_DETAILS: '/admin/patients/:id',
+  BOOKINGS: '/admin/bookings',
+  PAYOUTS: '/admin/payouts',
+  PAYMENTS: '/admin/payments',
+  ADD_TEST_MONEY: '/admin/dev/add-test-money',
+  SPECIALIZATIONS: '/admin/specializations',
+  SYMPTOMS: '/admin/symptoms',
+  SYMPTOM_CATEGORIES: '/admin/symptom-categories',
+  LANGUAGES: '/admin/languages',
+  MEDICAL_COUNCIL: '/admin/medical-council',
+} as const;
