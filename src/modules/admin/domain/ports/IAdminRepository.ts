@@ -115,7 +115,7 @@ export interface IAdminRepository {
   // Languages
   getLanguages(): Promise<any[]>;
   createLanguage(data: { name: string; code: string }): Promise<any>;
-  updateLanguage(id: string, data: { name: string; code: string }): Promise<any>;
+  updateLanguage(id: string, data: { name?: string; code?: string; isActive?: boolean }): Promise<any>;
   deleteLanguage(id: string): Promise<void>;
   
   // Medical Council

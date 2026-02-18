@@ -18,11 +18,11 @@ export interface Doctor {
   id: string;
   name: string; // Included in list response
   phoneNumber: string;
-  tokenNumber: string;
+  tokenNumber: string | null;
   accountStatus: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
   kycStatus: 'PENDING' | 'SUBMITTED' | 'VERIFIED' | 'REJECTED' | 'EXPIRED';
-  specialization: string | null; // In list response
-  ratingAvg: number | null;
+  specialization: string | Specialization | null; // In list response (string in list, Specialization in details)
+  ratingAvg: number | string | null; // number in list, string in details response
   ratingCount: number;
   email?: string | null;
   experience?: number | null;

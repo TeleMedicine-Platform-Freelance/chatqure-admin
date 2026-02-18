@@ -120,9 +120,10 @@ export default function DoctorsPage() {
           if (!row.specialization) {
             return <span className="text-muted-foreground">-</span>;
           }
+          const label = typeof row.specialization === 'string' ? row.specialization : row.specialization.name;
           return (
             <Badge variant="secondary" className="text-xs">
-              {row.specialization}
+              {label}
             </Badge>
           );
         },

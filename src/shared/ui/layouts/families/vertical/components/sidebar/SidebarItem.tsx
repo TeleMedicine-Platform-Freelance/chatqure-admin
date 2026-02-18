@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, matchPath, Link } from "react-router";
+import { useLocation, Link } from "react-router";
 import { MoreVertical } from 'lucide-react';
 import { cn } from '@/shadcn/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/shadcn/components/ui/tooltip';

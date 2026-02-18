@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useService } from '@/app/providers/useDI';
@@ -6,7 +6,6 @@ import { ADMIN_SYMBOLS } from '../../di/symbols';
 import type { IAdminRepository } from '../../domain/ports/IAdminRepository';
 import { ADMIN_PATHS } from '../routes/paths';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/shadcn/components/ui/card';
-import { Badge } from '@/shared/ui/shadcn/components/ui/badge';
 import { Button } from '@/shadcn/components/ui/button';
 import { ArrowLeft, Loader2, Phone, Mail, User } from 'lucide-react';
 

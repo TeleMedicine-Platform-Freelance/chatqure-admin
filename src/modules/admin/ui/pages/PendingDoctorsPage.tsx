@@ -111,9 +111,10 @@ export default function PendingDoctorsPage() {
           if (!row.specialization) {
             return <span className="text-muted-foreground">-</span>;
           }
+          const label = typeof row.specialization === 'string' ? row.specialization : row.specialization.name;
           return (
             <Badge variant="secondary" className="text-xs">
-              {row.specialization}
+              {label}
             </Badge>
           );
         },
@@ -229,7 +230,7 @@ export default function PendingDoctorsPage() {
         onSortingChange={(newSorting) => {
           setSorting(newSorting);
         }}
-        onGlobalFilterChange={(search) => {
+        onGlobalFilterChange={(_search) => {
           // Not used for pending doctors, but required by DataTable
         }}
         pageSizeOptions={[10, 25, 50, 100]}

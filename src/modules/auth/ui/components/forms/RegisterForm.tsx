@@ -14,7 +14,7 @@ const schema = z.object({
 
 type Values = z.infer<typeof schema>;
 
-const RegisterForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
+const RegisterForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess: _onSuccess }) => {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<Values>({ 
     resolver: zodResolver(schema),
     defaultValues: {
@@ -24,7 +24,7 @@ const RegisterForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
     },
   });
 
-  const onSubmit = async (values: Values) => {
+  const onSubmit = async (_values: Values) => {
     // Admin registration is not available - show message
     alert('Admin registration is not available. Please contact your administrator to create an admin account.');
   };

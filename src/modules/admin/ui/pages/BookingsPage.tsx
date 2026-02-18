@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { SortingState, PaginationState } from '@tanstack/react-table';
 import { useService } from '@/app/providers/useDI';
@@ -25,8 +25,8 @@ export default function BookingsPage() {
   const repository = useService<IAdminRepository>(ADMIN_SYMBOLS.IAdminRepository);
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [_globalFilter, setGlobalFilter] = useState('');
+  const [statusFilter, _setStatusFilter] = useState<string>('');
 
   const mapSortField = (columnId: string): string | undefined => {
     const fieldMap: Record<string, string> = {

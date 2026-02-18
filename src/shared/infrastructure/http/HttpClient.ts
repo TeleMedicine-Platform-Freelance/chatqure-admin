@@ -5,7 +5,6 @@ import { CORE_SYMBOLS } from '@/core/di/symbols';
 import type { IConfig } from '@/shared/infrastructure/config/Config';
 import type { IStorageService } from '@/shared/infrastructure/storage/StorageService';
 import type { ILogger } from '@/shared/utils/Logger';
-import { AUTH_PATHS } from '@/modules/auth/ui/routes';
 import type { ApiResponse } from '../models/api';
 
 export interface IHttpClient {
