@@ -108,8 +108,31 @@ export interface IAdminRepository {
   
   // Symptom Categories
   getSymptomCategories(): Promise<any[]>;
-  createSymptomCategory(data: { name: string }): Promise<any>;
-  updateSymptomCategory(id: string, data: { name: string }): Promise<any>;
+  getFullSymptoms(): Promise<{
+    data: {
+      symptoms: Array<{ id: string; name: string; isActive: boolean; createdAt: string; updatedAt: string }>;
+      categories: Array<{
+        id: string;
+        name: string;
+        displayOrder: number;
+        isActive: boolean;
+        symptoms: Array<{ id: string; name: string }>;
+        createdAt: string;
+        updatedAt: string;
+      }>;
+    };
+  }>;
+  createSymptomCategory(data: { 
+    name: string; 
+    displayOrder?: number; 
+    symptomIds?: string[] 
+  }): Promise<any>;
+  updateSymptomCategory(id: string, data: { 
+    name?: string; 
+    displayOrder?: number; 
+    isActive?: boolean;
+    symptomIds?: string[] 
+  }): Promise<any>;
   deleteSymptomCategory(id: string): Promise<void>;
   
   // Languages

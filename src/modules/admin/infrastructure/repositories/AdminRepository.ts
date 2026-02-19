@@ -312,12 +312,55 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     );
   }
 
-  async createSymptomCategory(data: { name: string }): Promise<any> {
+  async getFullSymptoms(): Promise<{
+    data: {
+      symptoms: Array<{ id: string; name: string; isActive: boolean; createdAt: string; updatedAt: string }>;
+      categories: Array<{
+        id: string;
+        name: string;
+        displayOrder: number;
+        isActive: boolean;
+        symptoms: Array<{ id: string; name: string }>;
+        createdAt: string;
+        updatedAt: string;
+      }>;
+    };
+  }> {
+    const response = await this.get<{
+      data: {
+        symptoms: Array<{ id: string; name: string; isActive: boolean; createdAt: string; updatedAt: string }>;
+        categories: Array<{
+          id: string;
+          name: string;
+          displayOrder: number;
+          isActive: boolean;
+          symptoms: Array<{ id: string; name: string }>;
+          createdAt: string;
+          updatedAt: string;
+        }>;
+      };
+    }>(
+      `${AdminRepository.REFERENCE_DATA}/symptoms/full`,
+      'Failed to fetch full symptom data'
+    );
+    return response;
+  }
+
+  async createSymptomCategory(data: { 
+    name: string; 
+    displayOrder?: number; 
+    symptomIds?: string[] 
+  }): Promise<any> {
     const response = await this.post<{ data: any }>(`${AdminRepository.REFERENCE_DATA}/symptom-categories`, data, 'Failed to create symptom category');
     return response.data;
   }
 
-  async updateSymptomCategory(id: string, data: { name: string }): Promise<any> {
+  async updateSymptomCategory(id: string, data: { 
+    name?: string; 
+    displayOrder?: number; 
+    isActive?: boolean;
+    symptomIds?: string[] 
+  }): Promise<any> {
     const response = await this.put<{ data: any }>(`${AdminRepository.REFERENCE_DATA}/symptom-categories/${id}`, data, 'Failed to update symptom category');
     return response.data;
   }
