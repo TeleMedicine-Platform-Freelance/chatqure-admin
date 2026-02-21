@@ -50,6 +50,10 @@ export interface IAdminRepository {
   
   rejectKyc(doctorId: string, reason?: string): Promise<void>;
   
+  suspendDoctor(doctorId: string): Promise<void>;
+  
+  unsuspendDoctor(doctorId: string): Promise<void>;
+  
   // Patients
   getPatients(params?: {
     page?: number;

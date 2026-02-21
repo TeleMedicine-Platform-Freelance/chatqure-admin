@@ -142,6 +142,22 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     );
   }
 
+  async suspendDoctor(doctorId: string): Promise<void> {
+    await this.put<void>(
+      `/api/v1/admin/doctors/${doctorId}/suspend`,
+      undefined,
+      'Failed to suspend doctor'
+    );
+  }
+
+  async unsuspendDoctor(doctorId: string): Promise<void> {
+    await this.put<void>(
+      `/api/v1/admin/doctors/${doctorId}/unsuspend`,
+      undefined,
+      'Failed to unsuspend doctor'
+    );
+  }
+
   // Patients
   async getPatients(params?: {
     page?: number;

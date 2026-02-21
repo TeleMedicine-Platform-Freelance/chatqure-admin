@@ -27,8 +27,21 @@ import {
   XCircle,
   User,
   Briefcase,
+  Ban,
+  UserCheck,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/shadcn/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/shadcn/components/ui/alert-dialog';
 
 type Section = 'basic' | 'professional';
 
@@ -155,6 +168,7 @@ export default function DoctorDetailsPage() {
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [rejectError, setRejectError] = useState('');
+  const [suspendConfirmOpen, setSuspendConfirmOpen] = useState(false);
 
   const { data: doctor, isLoading, isError } = useQuery({
     queryKey: ['doctor-details', id],
@@ -185,6 +199,31 @@ export default function DoctorDetailsPage() {
     },
   });
 
+  const suspendDoctorMutation = useMutation({
+    mutationFn: (doctorId: string) => repository.suspendDoctor(doctorId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['doctor-details', id] });
+      queryClient.invalidateQueries({ queryKey: ['doctors'] });
+      setSuspendConfirmOpen(false);
+      toast.success('Doctor suspended. They have been logged out and must contact admin to be restored.');
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to suspend doctor');
+    },
+  });
+
+  const unsuspendDoctorMutation = useMutation({
+    mutationFn: (doctorId: string) => repository.unsuspendDoctor(doctorId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['doctor-details', id] });
+      queryClient.invalidateQueries({ queryKey: ['doctors'] });
+      toast.success('Doctor unsuspended. They can log in again.');
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to unsuspend doctor');
+    },
+  });
+
   const openApproveDialog = useCallback(() => {
     setApproveDialogOpen(true);
   }, []);
@@ -207,6 +246,16 @@ export default function DoctorDetailsPage() {
     }
     rejectKycMutation.mutate({ doctorId: id, reason: value });
   }, [id, rejectReason, rejectKycMutation]);
+
+  const confirmSuspend = useCallback(() => {
+    if (!id) return;
+    suspendDoctorMutation.mutate(id);
+  }, [id, suspendDoctorMutation]);
+
+  const handleUnsuspend = useCallback(() => {
+    if (!id) return;
+    unsuspendDoctorMutation.mutate(id);
+  }, [id, unsuspendDoctorMutation]);
 
   const goBack = useCallback(() => {
     navigate(ADMIN_PATHS.DOCTORS);
@@ -312,6 +361,41 @@ export default function DoctorDetailsPage() {
                 </Button>
               </div>
             )}
+
+            {selectedSection === 'basic' && (
+              <div className="flex flex-col sm:flex-row gap-2 pt-6 mt-6 border-t">
+                {doctor.accountStatus === 'SUSPENDED' ? (
+                  <Button
+                    onClick={handleUnsuspend}
+                    disabled={unsuspendDoctorMutation.isPending}
+                    variant="secondary"
+                    className="flex-1"
+                  >
+                    {unsuspendDoctorMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Restoring...
+                      </>
+                    ) : (
+                      <>
+                        <UserCheck className="mr-2 h-4 w-4" />
+                        Unsuspend doctor
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => setSuspendConfirmOpen(true)}
+                    disabled={suspendDoctorMutation.isPending}
+                    variant="destructive"
+                    className="flex-1"
+                  >
+                    <Ban className="mr-2 h-4 w-4" />
+                    Suspend doctor
+                  </Button>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -368,6 +452,35 @@ export default function DoctorDetailsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Suspend doctor confirmation */}
+      <AlertDialog open={suspendConfirmOpen} onOpenChange={setSuspendConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Suspend doctor?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will log the doctor out and block access until you unsuspend them. They will see a message to contact support. You can restore access anytime with &quot;Unsuspend doctor&quot;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={suspendDoctorMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmSuspend}
+              disabled={suspendDoctorMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {suspendDoctorMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Suspending...
+                </>
+              ) : (
+                'Suspend'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Reject KYC dialog */}
       <Dialog open={rejectDialogOpen} onOpenChange={(open) => {
