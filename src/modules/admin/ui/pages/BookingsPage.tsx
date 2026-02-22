@@ -37,12 +37,14 @@ export default function BookingsPage() {
   const repository = useService<IAdminRepository>(ADMIN_SYMBOLS.IAdminRepository);
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState('');
+  const [_globalFilter, setGlobalFilter] = useState('');
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   const statusParam = useMemo(() => {
     const v = columnFilters.find((f) => f.id === 'status')?.value as string | undefined;
-    return v && new Set(BOOKING_STATUSES).has(v) ? v : undefined;
+    return v && (BOOKING_STATUSES as readonly string[]).includes(v)
+      ? (v as (typeof BOOKING_STATUSES)[number])
+      : undefined;
   }, [columnFilters]);
 
   const mapSortField = (columnId: string): string | undefined => {

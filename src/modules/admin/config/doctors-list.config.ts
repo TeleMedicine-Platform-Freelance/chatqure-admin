@@ -157,8 +157,9 @@ export function parseDoctorsListParamsToState(
       : undefined;
 
   const columnFilters: ColumnFiltersState = [];
-  if (status && new Set(DOCTORS_LIST_KYC_STATUSES).has(status)) {
-    columnFilters.push({ id: 'kycStatus', value: status });
+  const kycStatus = status as (typeof DOCTORS_LIST_KYC_STATUSES)[number] | undefined;
+  if (kycStatus && new Set(DOCTORS_LIST_KYC_STATUSES).has(kycStatus)) {
+    columnFilters.push({ id: 'kycStatus', value: kycStatus });
   }
 
   return {

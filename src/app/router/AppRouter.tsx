@@ -146,6 +146,8 @@ const AppRouter: React.FC = () => {
               </ErrorBoundary>
             }>
               {renderRoutes(appRoutes)}
+              {/* Fallback: unmatched app paths (e.g. /admin/unknown) redirect to dashboard instead of blank content */}
+              <Route path="*" element={<Navigate to="/admin" replace />} />
             </Route>
 
             {/* Static error routes */}

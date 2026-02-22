@@ -77,9 +77,9 @@ export class AuthEventHandler {
           roles: payload.user.roles,
         });
 
-        // Navigate to dashboard after successful login
+        // Navigate to admin dashboard after successful login (explicit path avoids redirect races)
         this.logger.info('Navigating to dashboard after login');
-        this.navigationService.navigateTo('/');
+        this.navigationService.navigateTo('/admin');
 
         // TODO: Track analytics
         // analytics.track('Login Success', { userId: payload.user.id });
