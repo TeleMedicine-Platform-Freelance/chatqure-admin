@@ -1,11 +1,23 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
-import type { SortingState, PaginationState } from '@tanstack/react-table';
 import { useService } from '@/app/providers/useDI';
 import { ADMIN_SYMBOLS } from '../../di/symbols';
 import type { IAdminRepository } from '../../domain/ports/IAdminRepository';
+import type { Patient } from '../../domain/models/Patient';
 import { ADMIN_PATHS } from '../routes/paths';
+import {
+  getPatientsListApiParams,
+  getPatientsListQueryKeyFragment,
+  serializePatientsListStateToParams,
+  parsePatientsListParamsToState,
+} from '../../config/patients-list.config';
+import { useServerTableState } from '@/shared/hooks/useServerTableState';
+
+const PATIENTS_URL_SYNC = {
+  serialize: serializePatientsListStateToParams,
+  parse: parsePatientsListParamsToState,
+};
 import { DataTable, type DataTableColumn } from '@/shared/ui/components/table/DataTable';
 import { Badge } from '@/shared/ui/shadcn/components/ui/badge';
 import { Button } from '@/shadcn/components/ui/button';
@@ -18,52 +30,39 @@ import {
 import { MoreHorizontal, Eye } from 'lucide-react';
 import { cn } from '@/shadcn/lib/utils';
 
-interface Patient {
-  id: string;
-  name: string;
-  phoneNumber: string;
-  email?: string;
-  dateOfBirth?: string;
-  createdAt?: string;
-  walletBalance?: string;
-}
-
 export default function PatientsPage() {
   const repository = useService<IAdminRepository>(ADMIN_SYMBOLS.IAdminRepository);
   const navigate = useNavigate();
   const location = useLocation();
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState('');
+
+  const {
+    state: tableState,
+    onPaginationChange,
+    onSortingChange,
+    onColumnFiltersChange,
+    onGlobalFilterChange,
+  } = useServerTableState({
+    defaultPageSize: 10,
+    urlSync: PATIENTS_URL_SYNC,
+  });
+
+  const apiParams = useMemo(
+    () => getPatientsListApiParams(tableState),
+    [tableState]
+  );
+  const queryKeyFragment = useMemo(
+    () => getPatientsListQueryKeyFragment(tableState),
+    [tableState]
+  );
 
   const selectedPatientId = useMemo(() => {
     const match = location.pathname.match(/\/admin\/patients\/([^/]+)$/);
     return match ? match[1] : null;
   }, [location.pathname]);
 
-  const mapSortField = (columnId: string): string | undefined => {
-    const fieldMap: Record<string, string> = {
-      name: 'name',
-      phoneNumber: 'phoneNumber',
-      dateOfBirth: 'dateOfBirth',
-      createdAt: 'createdAt',
-    };
-    return fieldMap[columnId] || 'createdAt';
-  };
-
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['patients', pagination, sorting, globalFilter],
-    queryFn: async () => {
-      const sort = sorting[0];
-      const sortBy = sort ? mapSortField(sort.id) : undefined;
-      return repository.getPatients({
-        page: pagination.pageIndex + 1,
-        pageSize: pagination.pageSize,
-        search: globalFilter || undefined,
-        sortBy,
-        sortOrder: sort?.desc ? 'desc' : 'asc',
-      });
-    },
+    queryKey: ['patients', ...queryKeyFragment],
+    queryFn: () => repository.getPatients(apiParams),
   });
 
   const handleViewDetails = useCallback(
@@ -80,11 +79,18 @@ export default function PatientsPage() {
         header: 'Name',
         cell: (row) => (
           <div className="flex items-center gap-2">
-            <span className={cn('font-medium', selectedPatientId === row.id && 'text-primary')}>
+            <span
+              className={cn(
+                'font-medium',
+                selectedPatientId === row.id && 'text-primary'
+              )}
+            >
               {row.name || '-'}
             </span>
             {selectedPatientId === row.id && (
-              <Badge variant="default" className="text-xs">Selected</Badge>
+              <Badge variant="default" className="text-xs">
+                Selected
+              </Badge>
             )}
           </div>
         ),
@@ -100,21 +106,53 @@ export default function PatientsPage() {
         id: 'phoneNumber',
         header: 'Phone Number',
         cell: (row) => row.phoneNumber || '-',
-        sortable: true,
         accessorKey: 'phoneNumber',
+        filter: {
+          type: 'text',
+          placeholder: 'Search phone...',
+        },
         width: 150,
       },
       {
-        id: 'email',
-        header: 'Email',
-        cell: (row) => row.email || '-',
-        width: 200,
+        id: 'gender',
+        header: 'Gender',
+        cell: (row) => {
+          const g = row.gender;
+          if (!g) return <span className="text-muted-foreground">-</span>;
+          const label = g.charAt(0) + g.slice(1).toLowerCase();
+          return <span>{label}</span>;
+        },
+        width: 100,
+      },
+      {
+        id: 'ageYears',
+        header: 'Age',
+        cell: (row) => {
+          if (row.ageYears == null) return <span className="text-muted-foreground">-</span>;
+          return <span>{row.ageYears} yrs</span>;
+        },
+        width: 80,
       },
       {
         id: 'walletBalance',
         header: 'Wallet Balance',
-        cell: (row) => row.walletBalance ? `₹${row.walletBalance}` : '₹0',
-        width: 150,
+        cell: (row) => `₹${row.walletBalance ?? '0'}`,
+        width: 130,
+      },
+      {
+        id: 'createdAt',
+        header: 'Registered',
+        cell: (row) =>
+          row.createdAt
+            ? new Date(row.createdAt).toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              })
+            : '-',
+        sortable: true,
+        accessorKey: 'createdAt',
+        width: 120,
       },
       {
         id: 'actions',
@@ -146,32 +184,28 @@ export default function PatientsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Patients</h1>
-          <p className="text-muted-foreground">Manage and view all registered patients</p>
+          <p className="text-muted-foreground">
+            Manage and view all registered patients
+          </p>
         </div>
       </div>
 
       <DataTable
         columns={columns}
-        data={data?.data || []}
+        data={data?.data ?? []}
         mode="server"
         isLoading={isLoading}
         isError={isError}
-        totalCount={data?.pagination?.total || 0}
+        totalCount={data?.pagination?.total ?? 0}
         getRowClassName={(patient) =>
           selectedPatientId === patient.id
             ? 'bg-primary/5 border-l-4 border-l-primary'
             : ''
         }
-        onPaginationChange={(newPagination) => {
-          setPagination(newPagination);
-        }}
-        onSortingChange={(newSorting) => {
-          setSorting(newSorting);
-        }}
-        onGlobalFilterChange={(search) => {
-          setGlobalFilter(search);
-          setPagination({ ...pagination, pageIndex: 0 });
-        }}
+        onPaginationChange={onPaginationChange}
+        onSortingChange={onSortingChange}
+        onGlobalFilterChange={onGlobalFilterChange}
+        onColumnFiltersChange={onColumnFiltersChange}
         pageSizeOptions={[10, 25, 50, 100]}
         defaultPageSize={10}
         enableGlobalSearch
@@ -183,7 +217,8 @@ export default function PatientsPage() {
         labels={{
           loading: 'Loading patients...',
           noResults: 'No patients found',
-          errorMessage: error instanceof Error ? error.message : 'Failed to load patients',
+          errorMessage:
+            error instanceof Error ? error.message : 'Failed to load patients',
           search: 'Search patients...',
         }}
         emptyContent={

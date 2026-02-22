@@ -3,6 +3,7 @@
  */
 
 import type { DoctorDetails, DoctorListResponse } from '../models/Doctor';
+import type { PatientDetails, PatientListResponse } from '../models/Patient';
 
 export interface AdminAnalyticsOverview {
   totalDoctors: number;
@@ -20,6 +21,18 @@ export interface AdminDashboardMetrics {
   totalDoctorsBalance: string;
   totalPatientsBalance: string;
   totalRazorpayDeposits: string;
+}
+
+/** Message in a consultation (from GET /api/v1/consultation/:id/messages) */
+export interface ConsultationMessage {
+  id: string;
+  consultationId: string;
+  senderId: string;
+  senderRole: 'PATIENT' | 'DOCTOR' | 'ADMIN';
+  content: string;
+  messageType: string;
+  createdAt: string;
+  metadata?: Record<string, unknown> | null;
 }
 
 export interface IAdminRepository {
@@ -54,6 +67,12 @@ export interface IAdminRepository {
   
   unsuspendDoctor(doctorId: string): Promise<void>;
   
+  /**
+   * Get a temporary presigned URL for viewing a private document (e.g. KYC).
+   * Backend allows admin to access any document. Use for aadhaarFrontUrl, panCardUrl, etc.
+   */
+  getPresignedGetUrl(documentUrl: string): Promise<string>;
+  
   // Patients
   getPatients(params?: {
     page?: number;
@@ -61,9 +80,9 @@ export interface IAdminRepository {
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
-  }): Promise<any>;
-  
-  getPatientById(id: string): Promise<any>;
+  }): Promise<PatientListResponse>;
+
+  getPatientById(id: string): Promise<PatientDetails>;
   
   // Bookings
   getBookings(params?: {
@@ -75,6 +94,15 @@ export interface IAdminRepository {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   }): Promise<any>;
+
+  /**
+   * Get message history for a consultation (admin can view any booking's chat).
+   * Uses GET /api/v1/consultation/:consultationId/messages with admin JWT.
+   */
+  getConsultationMessages(
+    consultationId: string,
+    params?: { limit?: number; offset?: number; order?: 'asc' | 'desc' }
+  ): Promise<{ data: ConsultationMessage[]; total: number }>;
   
   // Payouts
   getPayoutRequests(params?: {

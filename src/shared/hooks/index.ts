@@ -31,3 +31,9 @@ export type { UseRepeatableOptions, UseRepeatableReturn } from './useRepeatable'
 // UI State
 export { usePersistentState } from './usePersistentState';
 export { useOnboarding } from './useOnboarding';
+export { useServerTableState } from './useServerTableState';
+export type {
+  ServerTableState,
+  UseServerTableStateOptions,
+  UrlSyncConfig,
+} from './useServerTableState';

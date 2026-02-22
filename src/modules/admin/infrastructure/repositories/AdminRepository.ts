@@ -8,6 +8,8 @@ import type { IHttpClient } from '@/shared/infrastructure/http/HttpClient';
 import { BaseRepository } from '@/shared/infrastructure/repositories/BaseRepository';
 import type { IAdminRepository, AdminAnalyticsOverview, AdminDashboardMetrics } from '../../domain/ports/IAdminRepository';
 import type { DoctorDetails, DoctorListResponse } from '../../domain/models/Doctor';
+import type { PatientDetails, PatientListResponse } from '../../domain/models/Patient';
+import type { ConsultationMessage } from '../../domain/ports/IAdminRepository';
 
 @injectable()
 export class AdminRepository extends BaseRepository implements IAdminRepository {
@@ -158,6 +160,13 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     );
   }
 
+  async getPresignedGetUrl(documentUrl: string): Promise<string> {
+    const query = `url=${encodeURIComponent(documentUrl)}`;
+    const url = this.appendQuery('/api/v1/upload/presigned-get', query);
+    const data = await this.get<{ url: string }>(url, 'Failed to get document URL');
+    return data.url;
+  }
+
   // Patients
   async getPatients(params?: {
     page?: number;
@@ -165,23 +174,29 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
-  }): Promise<any> {
+  }): Promise<PatientListResponse> {
     const backendParams: Record<string, string | number> = {};
     if (params?.page !== undefined) backendParams.page = params.page;
     if (params?.pageSize !== undefined) backendParams.limit = params.pageSize;
     if (params?.search) backendParams.search = params.search;
     if (params?.sortOrder) {
       backendParams.sortOrder = params.sortOrder;
-      backendParams.sortBy = params.sortBy || 'createdAt';
+      backendParams.sortBy = params.sortBy ?? 'createdAt';
     } else if (params?.sortBy) {
       backendParams.sortBy = params.sortBy;
     }
     const query = this.buildQueryString(backendParams);
-    return this.get<any>(this.appendQuery('/api/v1/admin/patients', query), 'Failed to fetch patients');
+    return this.get<PatientListResponse>(
+      this.appendQuery('/api/v1/admin/patients', query),
+      'Failed to fetch patients'
+    );
   }
 
-  async getPatientById(id: string): Promise<any> {
-    const response = await this.get<{ data: any }>(`/api/v1/admin/patients/${id}`, 'Failed to fetch patient details');
+  async getPatientById(id: string): Promise<PatientDetails> {
+    const response = await this.get<{ data: PatientDetails }>(
+      `/api/v1/admin/patients/${id}`,
+      'Failed to fetch patient details'
+    );
     return response.data;
   }
 
@@ -209,6 +224,21 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     }
     const query = this.buildQueryString(backendParams);
     return this.get<any>(this.appendQuery('/api/v1/admin/bookings', query), 'Failed to fetch bookings');
+  }
+
+  async getConsultationMessages(
+    consultationId: string,
+    params?: { limit?: number; offset?: number; order?: 'asc' | 'desc' }
+  ): Promise<{ data: ConsultationMessage[]; total: number }> {
+    const q: Record<string, string | number> = {};
+    if (params?.limit != null) q.limit = params.limit;
+    if (params?.offset != null) q.offset = params.offset;
+    if (params?.order) q.order = params.order;
+    const query = this.buildQueryString(q);
+    return this.get<{ data: ConsultationMessage[]; total: number }>(
+      this.appendQuery(`/api/v1/consultation/${consultationId}/messages`, query),
+      'Failed to fetch consultation messages'
+    );
   }
 
   // Payouts

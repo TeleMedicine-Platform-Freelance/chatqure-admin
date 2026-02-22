@@ -1,12 +1,23 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import type { SortingState, PaginationState } from '@tanstack/react-table';
 import { useService } from '@/app/providers/useDI';
 import { ADMIN_SYMBOLS } from '../../di/symbols';
 import type { IAdminRepository } from '../../domain/ports/IAdminRepository';
 import type { Doctor } from '../../domain/models/Doctor';
 import { ADMIN_PATHS } from '../routes/paths';
+import {
+  getPendingDoctorsListApiParams,
+  getPendingDoctorsListQueryKeyFragment,
+  serializePendingDoctorsListStateToParams,
+  parsePendingDoctorsListParamsToState,
+} from '../../config/pending-doctors-list.config';
+import { useServerTableState } from '@/shared/hooks/useServerTableState';
+
+const PENDING_DOCTORS_URL_SYNC = {
+  serialize: serializePendingDoctorsListStateToParams,
+  parse: parsePendingDoctorsListParamsToState,
+};
 import { DataTable, type DataTableColumn } from '@/shared/ui/components/table/DataTable';
 import { Badge } from '@/shared/ui/shadcn/components/ui/badge';
 import { Button } from '@/shadcn/components/ui/button';
@@ -21,37 +32,31 @@ import { MoreHorizontal, Eye } from 'lucide-react';
 export default function PendingDoctorsPage() {
   const repository = useService<IAdminRepository>(ADMIN_SYMBOLS.IAdminRepository);
   const navigate = useNavigate();
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [tokenNumberFilter, setTokenNumberFilter] = useState('');
-  const [nameFilter, setNameFilter] = useState('');
-  const [phoneNumberFilter, setPhoneNumberFilter] = useState('');
 
-  // Map frontend column IDs to backend sort field names
-  const mapSortField = (columnId: string): string | undefined => {
-    // Only createdAt is supported for pending doctors
-    return columnId === 'createdAt' ? 'createdAt' : undefined;
-  };
-
-  // Fetch pending doctors
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['pendingDoctors', pagination, sorting, tokenNumberFilter, nameFilter, phoneNumberFilter],
-    queryFn: async () => {
-      const sort = sorting[0];
-      const sortBy = sort ? mapSortField(sort.id) : 'createdAt';
-      return repository.getPendingDoctors({
-        page: pagination.pageIndex + 1,
-        pageSize: pagination.pageSize,
-        tokenNumber: tokenNumberFilter || undefined,
-        name: nameFilter || undefined,
-        phoneNumber: phoneNumberFilter || undefined,
-        sortBy,
-        sortOrder: sort?.desc ? 'desc' : 'asc',
-      });
-    },
+  const {
+    state: tableState,
+    onPaginationChange,
+    onSortingChange,
+    onColumnFiltersChange,
+  } = useServerTableState({
+    defaultPageSize: 10,
+    urlSync: PENDING_DOCTORS_URL_SYNC,
   });
 
-  // Navigate to doctor details page
+  const apiParams = useMemo(
+    () => getPendingDoctorsListApiParams(tableState),
+    [tableState]
+  );
+  const queryKeyFragment = useMemo(
+    () => getPendingDoctorsListQueryKeyFragment(tableState),
+    [tableState]
+  );
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['pendingDoctors', ...queryKeyFragment],
+    queryFn: () => repository.getPendingDoctors(apiParams),
+  });
+
   const handleViewDetails = useCallback(
     (doctor: Doctor) => {
       navigate(ADMIN_PATHS.DOCTOR_DETAILS.replace(':id', doctor.id));
@@ -59,7 +64,6 @@ export default function PendingDoctorsPage() {
     [navigate]
   );
 
-  // Define columns
   const columns: DataTableColumn<Doctor>[] = useMemo(
     () => [
       {
@@ -68,15 +72,17 @@ export default function PendingDoctorsPage() {
         cell: (row) => (
           <span className="font-mono font-medium">{row.tokenNumber || '-'}</span>
         ),
-        sortable: false,
         accessorKey: 'tokenNumber',
+        filter: {
+          type: 'text',
+          placeholder: 'Filter by token (8 digits)...',
+        },
         width: 150,
       },
       {
         id: 'name',
         header: 'Name',
         cell: (row) => <span className="font-medium">{row.name || '-'}</span>,
-        sortable: false,
         accessorKey: 'name',
         filter: {
           type: 'text',
@@ -88,7 +94,6 @@ export default function PendingDoctorsPage() {
         id: 'phoneNumber',
         header: 'Phone Number',
         cell: (row) => row.phoneNumber,
-        sortable: false,
         accessorKey: 'phoneNumber',
         filter: {
           type: 'text',
@@ -99,8 +104,7 @@ export default function PendingDoctorsPage() {
       {
         id: 'email',
         header: 'Email',
-        cell: (row) => row.email || <span className="text-muted-foreground">-</span>,
-        sortable: false,
+        cell: (row) => row.email ?? <span className="text-muted-foreground">-</span>,
         accessorKey: 'email',
         width: 200,
       },
@@ -111,7 +115,10 @@ export default function PendingDoctorsPage() {
           if (!row.specialization) {
             return <span className="text-muted-foreground">-</span>;
           }
-          const label = typeof row.specialization === 'string' ? row.specialization : row.specialization.name;
+          const label =
+            typeof row.specialization === 'string'
+              ? row.specialization
+              : row.specialization.name;
           return (
             <Badge variant="secondary" className="text-xs">
               {label}
@@ -133,7 +140,6 @@ export default function PendingDoctorsPage() {
             </span>
           );
         },
-        sortable: false,
         accessorKey: 'experience',
         width: 120,
       },
@@ -174,65 +180,17 @@ export default function PendingDoctorsPage() {
         </div>
       </div>
 
-      {/* Filter inputs */}
-      <div className="flex gap-4 items-end">
-        <div className="flex-1">
-          <label className="text-sm font-medium mb-1 block">Token Number</label>
-          <input
-            type="text"
-            value={tokenNumberFilter}
-            onChange={(e) => {
-              setTokenNumberFilter(e.target.value);
-              setPagination({ ...pagination, pageIndex: 0 });
-            }}
-            placeholder="Filter by token number..."
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
-        <div className="flex-1">
-          <label className="text-sm font-medium mb-1 block">Name</label>
-          <input
-            type="text"
-            value={nameFilter}
-            onChange={(e) => {
-              setNameFilter(e.target.value);
-              setPagination({ ...pagination, pageIndex: 0 });
-            }}
-            placeholder="Filter by name..."
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
-        <div className="flex-1">
-          <label className="text-sm font-medium mb-1 block">Phone Number</label>
-          <input
-            type="text"
-            value={phoneNumberFilter}
-            onChange={(e) => {
-              setPhoneNumberFilter(e.target.value);
-              setPagination({ ...pagination, pageIndex: 0 });
-            }}
-            placeholder="Filter by phone..."
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
-      </div>
-
       <DataTable
         columns={columns}
-        data={data?.data || []}
+        data={data?.data ?? []}
         mode="server"
         isLoading={isLoading}
         isError={isError}
-        totalCount={data?.pagination?.total || 0}
-        onPaginationChange={(newPagination) => {
-          setPagination(newPagination);
-        }}
-        onSortingChange={(newSorting) => {
-          setSorting(newSorting);
-        }}
-        onGlobalFilterChange={(_search) => {
-          // Not used for pending doctors, but required by DataTable
-        }}
+        totalCount={data?.pagination?.total ?? 0}
+        onPaginationChange={onPaginationChange}
+        onSortingChange={onSortingChange}
+        onColumnFiltersChange={onColumnFiltersChange}
+        onGlobalFilterChange={() => {}}
         pageSizeOptions={[10, 25, 50, 100]}
         defaultPageSize={10}
         enableGlobalSearch={false}

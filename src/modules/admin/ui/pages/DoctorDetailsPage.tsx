@@ -29,7 +29,14 @@ import {
   Briefcase,
   Ban,
   UserCheck,
+  FileCheck,
+  ExternalLink,
+  ImageIcon,
+  Wallet,
+  Calendar,
+  Clock,
 } from 'lucide-react';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/shadcn/lib/utils';
 import {
@@ -43,12 +50,24 @@ import {
   AlertDialogTitle,
 } from '@/shadcn/components/ui/alert-dialog';
 
-type Section = 'basic' | 'professional';
+type Section = 'basic' | 'professional' | 'kyc' | 'profile';
 
 const SECTIONS: { id: Section; label: string; icon: React.ReactNode }[] = [
   { id: 'basic', label: 'Basic Info', icon: <User className="h-4 w-4" /> },
   { id: 'professional', label: 'Professional Info', icon: <Briefcase className="h-4 w-4" /> },
+  { id: 'kyc', label: 'KYC Documents', icon: <FileCheck className="h-4 w-4" /> },
+  { id: 'profile', label: 'Profile & Photos', icon: <ImageIcon className="h-4 w-4" /> },
 ];
+
+function formatDate(value: string | null | undefined): string {
+  if (!value) return '—';
+  try {
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? value : format(d, 'dd MMM yyyy, HH:mm');
+  } catch {
+    return value;
+  }
+}
 
 function BasicDetailsCard({ doctor }: { doctor: DoctorDetails }) {
   return (
@@ -74,6 +93,10 @@ function BasicDetailsCard({ doctor }: { doctor: DoctorDetails }) {
         <p className="text-sm">{doctor.email || '-'}</p>
       </div>
       <div className="space-y-1">
+        <p className="text-sm font-medium text-muted-foreground">Gender</p>
+        <p className="text-sm">{doctor.gender ?? '—'}</p>
+      </div>
+      <div className="space-y-1">
         <p className="text-sm font-medium text-muted-foreground">Account Status</p>
         <Badge variant={doctor.accountStatus === 'ACTIVE' ? 'default' : 'secondary'}>
           {doctor.accountStatus}
@@ -94,6 +117,143 @@ function BasicDetailsCard({ doctor }: { doctor: DoctorDetails }) {
         >
           {doctor.kycStatus}
         </Badge>
+      </div>
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-muted-foreground">Medical Council</p>
+        <p className="text-sm">
+          {doctor.medicalCouncil
+            ? [doctor.medicalCouncil.name, doctor.medicalCouncil.state].filter(Boolean).join(', ') || '—'
+            : doctor.medicalCouncilOther
+              ? `Other: ${doctor.medicalCouncilOther}`
+              : '—'}
+        </p>
+      </div>
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-muted-foreground">Medical Approach</p>
+        <p className="text-sm">{doctor.medicalApproach || '—'}</p>
+      </div>
+      <div className="space-y-1 flex items-center gap-1">
+        <Wallet className="h-3 w-3 text-muted-foreground" />
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">Wallet Balance</p>
+          <p className="text-sm">₹{doctor.walletBalance ?? '0'}</p>
+        </div>
+      </div>
+      <div className="space-y-1 sm:col-span-2 border-t pt-4 mt-2">
+        <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+          <Calendar className="h-3 w-3" /> KYC & account dates
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+          {doctor.kycStatus === 'REJECTED' && doctor.kycRejectionReason && (
+            <div className="sm:col-span-2">
+              <p className="text-xs font-medium text-muted-foreground">Rejection reason</p>
+              <p className="text-sm text-destructive">{doctor.kycRejectionReason}</p>
+            </div>
+          )}
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">KYC submitted</p>
+            <p className="text-sm">{formatDate(doctor.kycSubmittedAt)}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">KYC verified</p>
+            <p className="text-sm">{formatDate(doctor.kycVerifiedAt)}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">Account created</p>
+            <p className="text-sm">{formatDate(doctor.accountCreatedAt)}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">Profile updated</p>
+            <p className="text-sm">{formatDate(doctor.updatedAt)}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3 w-3" /> Last login
+            </p>
+            <p className="text-sm">{formatDate(doctor.lastLoginAt)}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DocLink({
+  url,
+  label,
+  onView,
+}: {
+  url: string | null;
+  label: string;
+  onView: (url: string) => Promise<void>;
+}) {
+  const [loading, setLoading] = useState(false);
+  if (!url) return <span className="text-sm text-muted-foreground">—</span>;
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        setLoading(true);
+        try {
+          await onView(url);
+        } finally {
+          setLoading(false);
+        }
+      }}
+      disabled={loading}
+      className="text-sm text-primary hover:underline inline-flex items-center gap-1 disabled:opacity-50"
+    >
+      {loading ? (
+        <Loader2 className="h-3 w-3 animate-spin" />
+      ) : (
+        <>
+          {label}
+          <ExternalLink className="h-3 w-3" />
+        </>
+      )}
+    </button>
+  );
+}
+
+function KycDocumentsCard({
+  doctor,
+  onViewDocument,
+}: {
+  doctor: DoctorDetails;
+  onViewDocument: (documentUrl: string) => Promise<void>;
+}) {
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-muted-foreground">
+        Review these documents before approving the doctor. Private documents are loaded via a temporary link (same as the mobile app).
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-muted-foreground">Aadhaar Number</p>
+          <p className="text-sm">{doctor.aadhaarNumber || '—'}</p>
+        </div>
+        <div className="space-y-1 sm:col-span-2" />
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-muted-foreground">Aadhaar Front</p>
+          <DocLink url={doctor.aadhaarFrontUrl} label="View document" onView={onViewDocument} />
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-muted-foreground">Aadhaar Back</p>
+          <DocLink url={doctor.aadhaarBackUrl} label="View document" onView={onViewDocument} />
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-muted-foreground">PAN Number</p>
+          <p className="text-sm">{doctor.panNumber || '—'}</p>
+        </div>
+        <div className="space-y-1" />
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-muted-foreground">PAN Card</p>
+          <DocLink url={doctor.panCardUrl} label="View document" onView={onViewDocument} />
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-muted-foreground">Education Certificate</p>
+          <DocLink url={doctor.educationCertUrl} label="View document" onView={onViewDocument} />
+        </div>
       </div>
     </div>
   );
@@ -141,6 +301,10 @@ function ProfessionalDetailsCard({ doctor }: { doctor: DoctorDetails }) {
           )}
         </p>
       </div>
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-muted-foreground">Current Workplace</p>
+        <p className="text-sm">{doctor.currentWorkplace || '—'}</p>
+      </div>
       {doctor.languages && doctor.languages.length > 0 && (
         <div className="space-y-2 sm:col-span-2">
           <p className="text-sm font-medium text-muted-foreground">Languages</p>
@@ -149,6 +313,60 @@ function ProfessionalDetailsCard({ doctor }: { doctor: DoctorDetails }) {
               <Badge key={lang.id} variant="secondary">
                 {lang.name}
               </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+      {doctor.about && (
+        <div className="space-y-2 sm:col-span-2 border-t pt-4 mt-2">
+          <p className="text-sm font-medium text-muted-foreground">About</p>
+          <p className="text-sm whitespace-pre-wrap">{doctor.about}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProfilePhotosCard({
+  doctor,
+  onViewDocument,
+}: {
+  doctor: DoctorDetails;
+  onViewDocument: (documentUrl: string) => Promise<void>;
+}) {
+  const hasProfile = !!doctor.profilePictureUrl;
+  const photos = doctor.photoUrls ?? [];
+  const hasPhotos = photos.length > 0;
+  if (!hasProfile && !hasPhotos) {
+    return (
+      <p className="text-sm text-muted-foreground">No profile picture or photos uploaded.</p>
+    );
+  }
+  return (
+    <div className="space-y-6">
+      {hasProfile && (
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-muted-foreground">Profile Picture</p>
+          <div className="flex items-start gap-4">
+            <DocLink
+              url={doctor.profilePictureUrl ?? null}
+              label="View profile picture"
+              onView={onViewDocument}
+            />
+          </div>
+        </div>
+      )}
+      {hasPhotos && (
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-muted-foreground">Service Photos ({photos.length})</p>
+          <div className="flex flex-wrap gap-2">
+            {photos.map((url, i) => (
+              <DocLink
+                key={url}
+                url={url}
+                label={`View photo ${i + 1}`}
+                onView={onViewDocument}
+              />
             ))}
           </div>
         </div>
@@ -261,6 +479,18 @@ export default function DoctorDetailsPage() {
     navigate(ADMIN_PATHS.DOCTORS);
   }, [navigate]);
 
+  const handleViewDocument = useCallback(
+    async (documentUrl: string) => {
+      try {
+        const url = await repository.getPresignedGetUrl(documentUrl);
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to load document');
+      }
+    },
+    [repository]
+  );
+
   if (!id) {
     return (
       <div className="container mx-auto py-6">
@@ -333,12 +563,43 @@ export default function DoctorDetailsPage() {
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">
-              {selectedSection === 'basic' ? 'Basic Information' : 'Professional Information'}
+              {selectedSection === 'basic' && 'Basic Information'}
+              {selectedSection === 'professional' && 'Professional Information'}
+              {selectedSection === 'kyc' && 'KYC Documents'}
+              {selectedSection === 'profile' && 'Profile & Photos'}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {selectedSection === 'basic' && <BasicDetailsCard doctor={doctor} />}
             {selectedSection === 'professional' && <ProfessionalDetailsCard doctor={doctor} />}
+            {selectedSection === 'kyc' && (
+              <KycDocumentsCard doctor={doctor} onViewDocument={handleViewDocument} />
+            )}
+            {selectedSection === 'profile' && (
+              <ProfilePhotosCard doctor={doctor} onViewDocument={handleViewDocument} />
+            )}
+
+            {selectedSection === 'kyc' && doctor.kycStatus === 'SUBMITTED' && (
+              <div className="flex flex-col sm:flex-row gap-2 pt-6 mt-6 border-t">
+                <Button
+                  onClick={openApproveDialog}
+                  disabled={approveKycMutation.isPending || rejectKycMutation.isPending}
+                  className="flex-1"
+                >
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Approve KYC
+                </Button>
+                <Button
+                  onClick={openRejectDialog}
+                  disabled={approveKycMutation.isPending || rejectKycMutation.isPending}
+                  variant="destructive"
+                  className="flex-1"
+                >
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Reject KYC
+                </Button>
+              </div>
+            )}
 
             {selectedSection === 'basic' && doctor.kycStatus === 'SUBMITTED' && (
               <div className="flex flex-col sm:flex-row gap-2 pt-6 mt-6 border-t">

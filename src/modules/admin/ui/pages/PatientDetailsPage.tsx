@@ -7,7 +7,7 @@ import type { IAdminRepository } from '../../domain/ports/IAdminRepository';
 import { ADMIN_PATHS } from '../routes/paths';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/shadcn/components/ui/card';
 import { Button } from '@/shadcn/components/ui/button';
-import { ArrowLeft, Loader2, Phone, Mail, User } from 'lucide-react';
+import { ArrowLeft, Loader2, Phone, User, Calendar, Wallet, Ruler, Scale, Droplets } from 'lucide-react';
 
 export default function PatientDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -35,13 +35,14 @@ export default function PatientDetailsPage() {
     );
   }
 
-  if (isLoading)
+  if (isLoading) {
     return (
       <div className="container mx-auto py-6 flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         <span className="ml-2 text-muted-foreground">Loading patient details...</span>
       </div>
     );
+  }
 
   if (isError || !patient) {
     return (
@@ -53,6 +54,10 @@ export default function PatientDetailsPage() {
       </div>
     );
   }
+
+  const genderLabel = patient.gender
+    ? patient.gender.charAt(0) + patient.gender.slice(1).toLowerCase()
+    : null;
 
   return (
     <div className="container mx-auto py-6 space-y-4">
@@ -83,22 +88,78 @@ export default function PatientDetailsPage() {
               </p>
               <p className="text-sm">{patient.phoneNumber || '-'}</p>
             </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <Mail className="h-3 w-3" /> Email
-              </p>
-              <p className="text-sm">{patient.email || '-'}</p>
-            </div>
-            {patient.dateOfBirth && (
+            {patient.clientCode && (
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Date of Birth</p>
-                <p className="text-sm">{new Date(patient.dateOfBirth).toLocaleDateString()}</p>
+                <p className="text-sm font-medium text-muted-foreground">Client Code</p>
+                <p className="text-sm font-mono text-muted-foreground">{patient.clientCode}</p>
               </div>
             )}
-            {patient.walletBalance !== undefined && (
+            {genderLabel && (
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Wallet Balance</p>
-                <p className="text-sm font-medium">₹{patient.walletBalance || '0'}</p>
+                <p className="text-sm font-medium text-muted-foreground">Gender</p>
+                <p className="text-sm">{genderLabel}</p>
+              </div>
+            )}
+            {patient.dateOfBirth && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                  <Calendar className="h-3 w-3" /> Date of Birth
+                </p>
+                <p className="text-sm">
+                  {new Date(patient.dateOfBirth).toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </p>
+              </div>
+            )}
+            {patient.ageYears != null && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Age</p>
+                <p className="text-sm">{patient.ageYears} years</p>
+              </div>
+            )}
+            {patient.height != null && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                  <Ruler className="h-3 w-3" /> Height
+                </p>
+                <p className="text-sm">{patient.height} cm</p>
+              </div>
+            )}
+            {patient.weight != null && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                  <Scale className="h-3 w-3" /> Weight
+                </p>
+                <p className="text-sm">{patient.weight} kg</p>
+              </div>
+            )}
+            {patient.bloodGroup && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                  <Droplets className="h-3 w-3" /> Blood Group
+                </p>
+                <p className="text-sm">{patient.bloodGroup}</p>
+              </div>
+            )}
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <Wallet className="h-3 w-3" /> Wallet Balance
+              </p>
+              <p className="text-sm font-medium">₹{patient.walletBalance ?? '0'}</p>
+            </div>
+            {patient.createdAt && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Registered</p>
+                <p className="text-sm">
+                  {new Date(patient.createdAt).toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </p>
               </div>
             )}
           </div>

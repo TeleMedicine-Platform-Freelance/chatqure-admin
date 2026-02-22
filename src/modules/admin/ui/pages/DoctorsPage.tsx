@@ -1,12 +1,19 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
-import type { SortingState, PaginationState } from '@tanstack/react-table';
 import { useService } from '@/app/providers/useDI';
 import { ADMIN_SYMBOLS } from '../../di/symbols';
 import type { IAdminRepository } from '../../domain/ports/IAdminRepository';
 import type { Doctor } from '../../domain/models/Doctor';
 import { ADMIN_PATHS } from '../routes/paths';
+import {
+  getDoctorsListApiParams,
+  getDoctorsListQueryKeyFragment,
+  serializeDoctorsListStateToParams,
+  parseDoctorsListParamsToState,
+  DOCTORS_LIST_KYC_STATUSES,
+} from '../../config/doctors-list.config';
+import { useServerTableState } from '@/shared/hooks/useServerTableState';
 import { DataTable, type DataTableColumn } from '@/shared/ui/components/table/DataTable';
 import { Badge } from '@/shared/ui/shadcn/components/ui/badge';
 import { Button } from '@/shadcn/components/ui/button';
@@ -19,52 +26,51 @@ import {
 import { MoreHorizontal, Eye } from 'lucide-react';
 import { cn } from '@/shadcn/lib/utils';
 
+const KYC_FILTER_OPTIONS = DOCTORS_LIST_KYC_STATUSES.map((value) => ({
+  label: value.charAt(0) + value.slice(1).toLowerCase(),
+  value,
+}));
+
+const DOCTORS_URL_SYNC = {
+  serialize: serializeDoctorsListStateToParams,
+  parse: parseDoctorsListParamsToState,
+};
+
 export default function DoctorsPage() {
   const repository = useService<IAdminRepository>(ADMIN_SYMBOLS.IAdminRepository);
   const navigate = useNavigate();
   const location = useLocation();
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState('');
 
-  // Extract selected doctor ID from URL (if viewing doctor details)
+  const {
+    state: tableState,
+    onPaginationChange,
+    onSortingChange,
+    onColumnFiltersChange,
+    onGlobalFilterChange,
+  } = useServerTableState({
+    defaultPageSize: 10,
+    urlSync: DOCTORS_URL_SYNC,
+  });
+
+  const apiParams = useMemo(
+    () => getDoctorsListApiParams(tableState),
+    [tableState]
+  );
+  const queryKeyFragment = useMemo(
+    () => getDoctorsListQueryKeyFragment(tableState),
+    [tableState]
+  );
+
   const selectedDoctorId = useMemo(() => {
     const match = location.pathname.match(/\/admin\/doctors\/([^/]+)$/);
     return match ? match[1] : null;
   }, [location.pathname]);
 
-  // Map frontend column IDs to backend sort field names
-  const mapSortField = (columnId: string): string | undefined => {
-    const fieldMap: Record<string, string> = {
-      name: 'email',
-      phoneNumber: 'email',
-      experience: 'experience',
-      kycStatus: 'kycStatus',
-      createdAt: 'createdAt',
-      email: 'email',
-      ratingAvg: 'ratingAvg',
-      ratingCount: 'ratingCount',
-    };
-    return fieldMap[columnId] || 'createdAt';
-  };
-
-  // Fetch doctors
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['doctors', pagination, sorting, globalFilter],
-    queryFn: async () => {
-      const sort = sorting[0];
-      const sortBy = sort ? mapSortField(sort.id) : undefined;
-      return repository.getDoctors({
-        page: pagination.pageIndex + 1,
-        pageSize: pagination.pageSize,
-        search: globalFilter || undefined,
-        sortBy,
-        sortOrder: sort?.desc ? 'desc' : 'asc',
-      });
-    },
+    queryKey: ['doctors', ...queryKeyFragment],
+    queryFn: () => repository.getDoctors(apiParams),
   });
 
-  // Navigate to doctor details page
   const handleViewDetails = useCallback(
     (doctor: Doctor) => {
       navigate(ADMIN_PATHS.DOCTOR_DETAILS.replace(':id', doctor.id));
@@ -72,7 +78,6 @@ export default function DoctorsPage() {
     [navigate]
   );
 
-  // Define columns
   const columns: DataTableColumn<Doctor>[] = useMemo(
     () => [
       {
@@ -80,10 +85,12 @@ export default function DoctorsPage() {
         header: 'Name',
         cell: (row) => (
           <div className="flex items-center gap-2">
-            <span className={cn(
-              'font-medium',
-              selectedDoctorId === row.id && 'text-primary'
-            )}>
+            <span
+              className={cn(
+                'font-medium',
+                selectedDoctorId === row.id && 'text-primary'
+              )}
+            >
               {row.name}
             </span>
             {selectedDoctorId === row.id && (
@@ -120,7 +127,10 @@ export default function DoctorsPage() {
           if (!row.specialization) {
             return <span className="text-muted-foreground">-</span>;
           }
-          const label = typeof row.specialization === 'string' ? row.specialization : row.specialization.name;
+          const label =
+            typeof row.specialization === 'string'
+              ? row.specialization
+              : row.specialization.name;
           return (
             <Badge variant="secondary" className="text-xs">
               {label}
@@ -163,13 +173,7 @@ export default function DoctorsPage() {
         },
         filter: {
           type: 'select',
-          options: [
-            { label: 'Verified', value: 'VERIFIED' },
-            { label: 'Pending', value: 'PENDING' },
-            { label: 'Submitted', value: 'SUBMITTED' },
-            { label: 'Rejected', value: 'REJECTED' },
-            { label: 'Expired', value: 'EXPIRED' },
-          ],
+          options: KYC_FILTER_OPTIONS,
         },
         sortable: true,
         accessorKey: 'kycStatus',
@@ -224,16 +228,10 @@ export default function DoctorsPage() {
             ? 'bg-primary/5 border-l-4 border-l-primary'
             : ''
         }
-        onPaginationChange={(newPagination) => {
-          setPagination(newPagination);
-        }}
-        onSortingChange={(newSorting) => {
-          setSorting(newSorting);
-        }}
-        onGlobalFilterChange={(search) => {
-          setGlobalFilter(search);
-          setPagination({ ...pagination, pageIndex: 0 });
-        }}
+        onPaginationChange={onPaginationChange}
+        onSortingChange={onSortingChange}
+        onGlobalFilterChange={onGlobalFilterChange}
+        onColumnFiltersChange={onColumnFiltersChange}
         pageSizeOptions={[10, 25, 50, 100]}
         defaultPageSize={10}
         enableGlobalSearch

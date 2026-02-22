@@ -14,6 +14,12 @@ export interface Language {
   code: string;
 }
 
+export interface MedicalCouncil {
+  id: string;
+  name: string;
+  state?: string | null;
+}
+
 export interface Doctor {
   id: string;
   name: string; // Included in list response
@@ -28,14 +34,17 @@ export interface Doctor {
   experience?: number | null;
 }
 
+export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
+
 export interface DoctorDetails extends Doctor {
-  name: string; // Required in details
+  name: string;
   tokenNumber: string | null;
   email: string | null;
+  gender?: Gender | null;
   kycRejectionReason: string | null;
   kycSubmittedAt: string | null;
   kycVerifiedAt: string | null;
-  specialization: Specialization | null; // Full object in details
+  specialization: Specialization | null;
   registrationNumber: string | null;
   registrationYear: number | null;
   aadhaarNumber: string | null;
@@ -45,11 +54,20 @@ export interface DoctorDetails extends Doctor {
   panCardUrl: string | null;
   educationCertUrl: string | null;
   ratePerMinute: string | null;
-  ratingAvg: string | null; // String in details response
+  ratingAvg: string | null;
   languages: Language[];
   createdAt: string;
   accountCreatedAt: string;
   lastLoginAt: string | null;
+  updatedAt?: string;
+  medicalCouncil?: MedicalCouncil | null;
+  medicalCouncilOther?: string | null;
+  medicalApproach?: string | null;
+  about?: string | null;
+  currentWorkplace?: string | null;
+  profilePictureUrl?: string | null;
+  photoUrls?: string[];
+  walletBalance?: string;
 }
 
 export interface PaginationMeta {

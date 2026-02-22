@@ -1,14 +1,24 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { SortingState, PaginationState } from '@tanstack/react-table';
+import type { SortingState, PaginationState, ColumnFiltersState } from '@tanstack/react-table';
 import { useService } from '@/app/providers/useDI';
 import { ADMIN_SYMBOLS } from '../../di/symbols';
 import type { IAdminRepository } from '../../domain/ports/IAdminRepository';
 import { DataTable, type DataTableColumn } from '@/shared/ui/components/table/DataTable';
 import { Badge } from '@/shared/ui/shadcn/components/ui/badge';
+import { Button } from '@/shadcn/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/shadcn/components/ui/dropdown-menu';
+import { MoreHorizontal, MessageSquare } from 'lucide-react';
+import { BookingMessagesSheet } from '../components/BookingMessagesSheet';
 
 interface Booking {
   id: string;
+  bookingNumber: string | null;
   bookingCode: string;
   clientName: string;
   clientPhoneNumber: string;
@@ -21,51 +31,74 @@ interface Booking {
   mode: string;
 }
 
+const BOOKING_STATUSES = ['REQUESTED', 'ACCEPTED', 'ACTIVE', 'ENDED', 'SETTLED', 'EXPIRED'] as const;
+
 export default function BookingsPage() {
   const repository = useService<IAdminRepository>(ADMIN_SYMBOLS.IAdminRepository);
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [_globalFilter, setGlobalFilter] = useState('');
-  const [statusFilter, _setStatusFilter] = useState<string>('');
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+  const statusParam = useMemo(() => {
+    const v = columnFilters.find((f) => f.id === 'status')?.value as string | undefined;
+    return v && new Set(BOOKING_STATUSES).has(v) ? v : undefined;
+  }, [columnFilters]);
 
   const mapSortField = (columnId: string): string | undefined => {
     const fieldMap: Record<string, string> = {
-      bookingDate: 'bookingDate',
+      bookingDate: 'createdAt',
       acceptedAt: 'acceptedAt',
       endedAt: 'endedAt',
       status: 'status',
     };
-    return fieldMap[columnId] || 'bookingDate';
+    return fieldMap[columnId] || 'createdAt';
   };
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['bookings', pagination, sorting, statusFilter],
+    queryKey: ['bookings', pagination, sorting, statusParam],
     queryFn: async () => {
       const sort = sorting[0];
       const sortBy = sort ? mapSortField(sort.id) : undefined;
       return repository.getBookings({
         page: pagination.pageIndex + 1,
         pageSize: pagination.pageSize,
-        status: statusFilter || undefined,
+        status: statusParam,
         sortBy,
         sortOrder: sort?.desc ? 'desc' : 'asc',
       });
     },
   });
 
+  const onColumnFiltersChange = useCallback((filters: ColumnFiltersState) => {
+    setColumnFilters(filters);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, []);
+
+  const onGlobalFilterChange = useCallback((search: string) => {
+    setGlobalFilter(search);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, []);
+
+  const [messagesBooking, setMessagesBooking] = useState<Booking | null>(null);
+  const [messagesSheetOpen, setMessagesSheetOpen] = useState(false);
+
+  const openMessages = useCallback((booking: Booking) => {
+    setMessagesBooking(booking);
+    setMessagesSheetOpen(true);
+  }, []);
+
   const columns: DataTableColumn<Booking>[] = useMemo(
     () => [
       {
-        id: 'id',
-        header: 'ID',
-        cell: (row) => <span className="font-mono text-xs">{row.id.slice(0, 8)}...</span>,
+        id: 'bookingNumber',
+        header: 'Booking #',
+        cell: (row) => (
+          <span className="font-mono font-medium">
+            {row.bookingNumber ?? <span className="text-muted-foreground">—</span>}
+          </span>
+        ),
         width: 120,
-      },
-      {
-        id: 'bookingCode',
-        header: 'Booking Code',
-        cell: (row) => <span className="font-mono text-xs">{row.bookingCode}</span>,
-        width: 200,
       },
       {
         id: 'clientName',
@@ -110,6 +143,7 @@ export default function BookingsPage() {
             { label: 'Active', value: 'ACTIVE' },
             { label: 'Ended', value: 'ENDED' },
             { label: 'Settled', value: 'SETTLED' },
+            { label: 'Expired', value: 'EXPIRED' },
           ],
         },
         sortable: true,
@@ -149,8 +183,29 @@ export default function BookingsPage() {
         accessorKey: 'endedAt',
         width: 180,
       },
+      {
+        id: 'actions',
+        header: 'Actions',
+        cell: (row) => (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => openMessages(row)}>
+                <MessageSquare className="mr-2 h-4 w-4" />
+                View messages
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ),
+        width: 80,
+      },
     ],
-    []
+    [openMessages]
   );
 
   return (
@@ -169,16 +224,10 @@ export default function BookingsPage() {
         isLoading={isLoading}
         isError={isError}
         totalCount={data?.pagination?.total ?? data?.data?.length ?? 0}
-        onPaginationChange={(newPagination) => {
-          setPagination(newPagination);
-        }}
-        onSortingChange={(newSorting) => {
-          setSorting(newSorting);
-        }}
-        onGlobalFilterChange={(search) => {
-          setGlobalFilter(search);
-          setPagination({ ...pagination, pageIndex: 0 });
-        }}
+        onPaginationChange={(newPagination) => setPagination(newPagination)}
+        onSortingChange={(newSorting) => setSorting(newSorting)}
+        onColumnFiltersChange={onColumnFiltersChange}
+        onGlobalFilterChange={onGlobalFilterChange}
         pageSizeOptions={[10, 25, 50, 100]}
         defaultPageSize={10}
         enableGlobalSearch
@@ -198,6 +247,15 @@ export default function BookingsPage() {
             <p className="text-muted-foreground">No bookings found</p>
           </div>
         }
+      />
+
+      <BookingMessagesSheet
+        open={messagesSheetOpen}
+        onOpenChange={(open) => {
+          setMessagesSheetOpen(open);
+          if (!open) setMessagesBooking(null);
+        }}
+        booking={messagesBooking}
       />
     </div>
   );
