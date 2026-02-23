@@ -25,6 +25,8 @@ import {
 import { Label } from '@/shadcn/components/ui/label';
 import { Input } from '@/shadcn/components/ui/input';
 import { Checkbox } from '@/shadcn/components/ui/checkbox';
+import { FieldMultiSelect } from '@/shared/ui/components/forms/composites/field/select/FieldMultiSelect';
+import type { SelectOption } from '@/shared/ui/components/forms/composites/field/select/types';
 import { Plus, Edit, Trash2, Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/shadcn/lib/utils';
@@ -33,6 +35,7 @@ interface Symptom {
   id: string;
   name: string;
   isActive: boolean;
+  specializations?: Array<{ id: string; name: string }>;
   createdAt: string;
   updatedAt: string;
 }
@@ -46,6 +49,7 @@ export default function SymptomsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [selectedSpecializationIds, setSelectedSpecializationIds] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -55,10 +59,21 @@ export default function SymptomsPage() {
     queryFn: () => repository.getSymptoms(),
   });
 
+  const { data: specializations = [] } = useQuery({
+    queryKey: ['specializations'],
+    queryFn: () => repository.getSpecializations(),
+  });
+
+  const specializationOptions: SelectOption<string>[] = specializations.map((s: { id: string; name: string }) => ({
+    value: s.id,
+    label: s.name,
+  }));
+
   // Categories are not needed for create/update in current admin flow
 
   const createMutation = useMutation({
-    mutationFn: (data: { name: string }) => repository.createSymptom(data),
+    mutationFn: (data: { name: string; specializationIds?: string[] }) =>
+      repository.createSymptom(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['symptoms'] });
       setIsSuccess(true);
@@ -75,8 +90,13 @@ export default function SymptomsPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { name: string; isActive?: boolean } }) =>
-      repository.updateSymptom(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { name: string; isActive?: boolean; specializationIds?: string[] };
+    }) => repository.updateSymptom(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['symptoms'] });
       setIsSuccess(true);
@@ -108,6 +128,7 @@ export default function SymptomsPage() {
   const resetForm = () => {
     setName('');
     setIsActive(true);
+    setSelectedSpecializationIds([]);
     setError('');
     setIsSaving(false);
     setIsSuccess(false);
@@ -122,6 +143,7 @@ export default function SymptomsPage() {
   const handleOpenEdit = (symptom: Symptom) => {
     setName(symptom.name);
     setIsActive(symptom.isActive);
+    setSelectedSpecializationIds(symptom.specializations?.map((s) => s.id) ?? []);
     setError('');
     setIsSuccess(false);
     setEditingId(symptom.id);
@@ -148,10 +170,15 @@ export default function SymptomsPage() {
           data: {
             name: name.trim(),
             isActive,
+            specializationIds: selectedSpecializationIds,
           },
         });
       } else {
-        await createMutation.mutateAsync({ name: name.trim() });
+        await createMutation.mutateAsync({
+          name: name.trim(),
+          specializationIds:
+            selectedSpecializationIds.length > 0 ? selectedSpecializationIds : undefined,
+        });
       }
     } catch (error) {
       // Error handled in mutation
@@ -196,6 +223,18 @@ export default function SymptomsPage() {
       sortable: true,
       accessorKey: 'name',
       width: 300,
+    },
+    {
+      id: 'specializations',
+      header: 'Specializations',
+      cell: (row) => (
+        <span className="text-muted-foreground text-sm">
+          {row.specializations?.length
+            ? row.specializations.map((s) => s.name).join(', ')
+            : '—'}
+        </span>
+      ),
+      width: 240,
     },
     {
       id: 'isActive',
@@ -300,6 +339,20 @@ export default function SymptomsPage() {
                     <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">⌘S</kbd>
                   </div>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Specializations (specialists for this symptom)</Label>
+                <FieldMultiSelect
+                  value={selectedSpecializationIds}
+                  onChange={setSelectedSpecializationIds}
+                  options={specializationOptions}
+                  placeholder="Select specializations..."
+                  isLoading={specializationOptions.length === 0 && specializations.length === 0}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Doctors with these specializations can be found when patients select this symptom.
+                </p>
               </div>
 
               {editingId && (

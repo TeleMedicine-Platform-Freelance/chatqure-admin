@@ -1,0 +1,19 @@
+services:
+  chatqure-admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_APP_NAME: ${VITE_APP_NAME:-Katalyst Admin}
+        VITE_APP_ENVIRONMENT: ${VITE_APP_ENVIRONMENT:-production}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://stagingapi.chatqure.com/}
+        VITE_API_TIMEOUT: ${VITE_API_TIMEOUT:-30000}
+        VITE_AUTH_LOGIN_PATH: ${VITE_AUTH_LOGIN_PATH:-/auth/login}
+        VITE_AUTH_TOKEN_KEY: ${VITE_AUTH_TOKEN_KEY:-katalyst_auth_token}
+        VITE_AUTH_CURRENT_USER_KEY: ${VITE_AUTH_CURRENT_USER_KEY:-katalyst_auth_current_user}
+        VITE_USE_MSW: ${VITE_USE_MSW:-false}
+    # Expose on 8080 so it doesn't conflict with stagingapi.chatqure.com (port 80).
+    # Use a reverse proxy on the host to route stagingadmin.chatqure.com -> localhost:8080
+    ports:
+      - "8080:80"
+    restart: unless-stopped

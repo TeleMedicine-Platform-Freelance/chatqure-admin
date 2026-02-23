@@ -11,6 +11,7 @@ import type {
   AdminAnalyticsOverview,
   AdminDashboardMetrics,
   AdminListItem,
+  AdminDashboardMetricsRange,
 } from '../../domain/ports/IAdminRepository';
 import type { DoctorDetails, DoctorListResponse } from '../../domain/models/Doctor';
 import type { PatientDetails, PatientListResponse } from '../../domain/models/Patient';
@@ -29,9 +30,18 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     );
   }
 
-  async getDashboardMetrics(): Promise<AdminDashboardMetrics> {
+  async getDashboardMetrics(params?: {
+    range?: AdminDashboardMetricsRange;
+    from?: string;
+    to?: string;
+  }): Promise<AdminDashboardMetrics> {
+    const query = this.buildQueryString({
+      range: params?.range,
+      from: params?.from,
+      to: params?.to,
+    });
     return this.get<AdminDashboardMetrics>(
-      '/api/v1/admin/dashboard/metrics',
+      this.appendQuery('/api/v1/admin/dashboard/metrics', query),
       'Failed to fetch dashboard metrics'
     );
   }
@@ -361,22 +371,25 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     );
   }
 
-  async createSymptom(data: { name: string }): Promise<any> {
-    const response = await this.post<{ data: any }>(
+  async createSymptom(data: { name: string; specializationIds?: string[] }): Promise<any> {
+    const response = await this.post<any>(
       `${AdminRepository.REFERENCE_DATA}/symptoms`,
       data,
       'Failed to create symptom'
     );
-    return response.data;
+    return response?.data ?? response;
   }
 
-  async updateSymptom(id: string, data: { name?: string; isActive?: boolean }): Promise<any> {
-    const response = await this.put<{ data: any }>(
+  async updateSymptom(
+    id: string,
+    data: { name?: string; isActive?: boolean; specializationIds?: string[] }
+  ): Promise<any> {
+    const response = await this.put<any>(
       `${AdminRepository.REFERENCE_DATA}/symptoms/${id}`,
       data,
       'Failed to update symptom'
     );
-    return response.data;
+    return response?.data ?? response;
   }
 
   async deleteSymptom(id: string): Promise<void> {

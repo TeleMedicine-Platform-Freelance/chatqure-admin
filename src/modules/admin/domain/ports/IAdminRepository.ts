@@ -14,13 +14,32 @@ export interface AdminAnalyticsOverview {
   activeConsultations: number;
 }
 
+export type AdminDashboardMetricsRange =
+  | 'all_time'
+  | 'today'
+  | 'yesterday'
+  | 'last_7_days'
+  | 'this_month'
+  | 'last_month'
+  | 'custom';
+
 export interface AdminDashboardMetrics {
-  totalPlatformBalance: string;
-  totalGstCollection: string;
-  totalCommission: string;
-  totalDoctorsBalance: string;
-  totalPatientsBalance: string;
-  totalRazorpayDeposits: string;
+  range: {
+    from?: string | null;
+    to?: string | null;
+  };
+  snapshotAt: string;
+  balances: {
+    totalPlatformBalance: string;
+    totalDoctorsBalance: string;
+    totalPatientsBalance: string;
+  };
+  flows: {
+    totalGstCollection: string;
+    totalCommission: string;
+    totalRazorpayDeposits: string;
+    totalPayoutWithdrawals: string;
+  };
 }
 
 /** Admin user (from GET /api/v1/admin/auth/admins) */
@@ -46,7 +65,11 @@ export interface ConsultationMessage {
 
 export interface IAdminRepository {
   getAnalyticsOverview(): Promise<AdminAnalyticsOverview>;
-  getDashboardMetrics(): Promise<AdminDashboardMetrics>;
+  getDashboardMetrics(params?: {
+    range?: AdminDashboardMetricsRange;
+    from?: string;
+    to?: string;
+  }): Promise<AdminDashboardMetrics>;
 
   getAdmins(): Promise<{ data: AdminListItem[] }>;
   createAdmin(data: { email: string; password: string }): Promise<{ id: string; email: string; message: string }>;
@@ -166,8 +189,8 @@ export interface IAdminRepository {
   
   // Symptoms
   getSymptoms(): Promise<any[]>;
-  createSymptom(data: { name: string; categoryId?: string }): Promise<any>;
-  updateSymptom(id: string, data: { name: string; categoryId?: string }): Promise<any>;
+  createSymptom(data: { name: string; specializationIds?: string[] }): Promise<any>;
+  updateSymptom(id: string, data: { name?: string; isActive?: boolean; specializationIds?: string[] }): Promise<any>;
   deleteSymptom(id: string): Promise<void>;
   
   // Symptom Categories
