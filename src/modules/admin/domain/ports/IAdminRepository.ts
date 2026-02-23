@@ -23,6 +23,15 @@ export interface AdminDashboardMetrics {
   totalRazorpayDeposits: string;
 }
 
+/** Admin user (from GET /api/v1/admin/auth/admins) */
+export interface AdminListItem {
+  id: string;
+  email: string;
+  status: string;
+  createdAt: string;
+  lastLoginAt: string | null;
+}
+
 /** Message in a consultation (from GET /api/v1/consultation/:id/messages) */
 export interface ConsultationMessage {
   id: string;
@@ -38,6 +47,10 @@ export interface ConsultationMessage {
 export interface IAdminRepository {
   getAnalyticsOverview(): Promise<AdminAnalyticsOverview>;
   getDashboardMetrics(): Promise<AdminDashboardMetrics>;
+
+  getAdmins(): Promise<{ data: AdminListItem[] }>;
+  createAdmin(data: { email: string; password: string }): Promise<{ id: string; email: string; message: string }>;
+
   getDoctors(params?: {
     page?: number;
     pageSize?: number;
@@ -72,6 +85,16 @@ export interface IAdminRepository {
    * Backend allows admin to access any document. Use for aadhaarFrontUrl, panCardUrl, etc.
    */
   getPresignedGetUrl(documentUrl: string): Promise<string>;
+
+  /**
+   * Get presigned upload URL for admin icon uploads (specialization or medical approach).
+   * Frontend must PUT the file to uploadUrl, then use publicUrl in create/update API.
+   */
+  getPresignedIconUploadUrl(
+    purpose: 'specialization_icon' | 'medical_approach_icon',
+    filename: string,
+    contentType: string
+  ): Promise<{ uploadUrl: string; publicUrl: string }>;
   
   // Patients
   getPatients(params?: {
@@ -128,9 +151,18 @@ export interface IAdminRepository {
   
   // Specializations
   getSpecializations(): Promise<any[]>;
-  createSpecialization(data: { name: string }): Promise<any>;
-  updateSpecialization(id: string, data: { name?: string; isActive?: boolean }): Promise<any>;
+  createSpecialization(data: { name: string; iconUrl?: string }): Promise<any>;
+  updateSpecialization(id: string, data: { name?: string; isActive?: boolean; iconUrl?: string | null }): Promise<any>;
   deleteSpecialization(id: string): Promise<void>;
+
+  // Medical Approaches
+  getMedicalApproaches(): Promise<any[]>;
+  createMedicalApproach(data: { code: string; name: string; iconUrl?: string }): Promise<any>;
+  updateMedicalApproach(
+    id: string,
+    data: { code?: string; name?: string; isActive?: boolean; iconUrl?: string | null }
+  ): Promise<any>;
+  deleteMedicalApproach(id: string): Promise<void>;
   
   // Symptoms
   getSymptoms(): Promise<any[]>;

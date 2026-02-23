@@ -1,5 +1,6 @@
 export const ADMIN_PATHS = {
   DASHBOARD: '/admin',
+  ADMINS: '/admin/admins',
   DOCTORS: '/admin/doctors',
   DOCTOR_PENDING: '/admin/doctors/pending',
   DOCTOR_DETAILS: '/admin/doctors/:id',
@@ -14,4 +15,5 @@ export const ADMIN_PATHS = {
   SYMPTOM_CATEGORIES: '/admin/symptom-categories',
   LANGUAGES: '/admin/languages',
   MEDICAL_COUNCIL: '/admin/medical-council',
+  MEDICAL_APPROACHES: '/admin/medical-approaches',
 } as const;

@@ -22,32 +22,36 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/shadcn/components/ui/alert-dialog';
-import FieldText from '@/shared/ui/components/forms/composites/field/FieldText';
+import { Label } from '@/shadcn/components/ui/label';
+import { Input } from '@/shadcn/components/ui/input';
 import { Checkbox } from '@/shadcn/components/ui/checkbox';
 import { Plus, Edit, Trash2, Check, Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/shadcn/lib/utils';
+import FieldText from '@/shared/ui/components/forms/composites/field/FieldText';
 import { uploadFileToPresignedUrl } from '@/shared/utils/presignedUpload';
 
 const ICON_TYPES = ['image/jpeg', 'image/png', 'image/svg+xml'];
 
-interface Specialization {
+interface MedicalApproach {
   id: string;
+  code: string;
   name: string;
   iconUrl?: string | null;
   isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export default function SpecializationsPage() {
+export default function MedicalApproachesPage() {
   const repository = useService<IAdminRepository>(ADMIN_SYMBOLS.IAdminRepository);
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [value, setValue] = useState('');
+  const [code, setCode] = useState('');
+  const [name, setName] = useState('');
   const [iconUrl, setIconUrl] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [error, setError] = useState('');
@@ -55,25 +59,26 @@ export default function SpecializationsPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [iconUploading, setIconUploading] = useState(false);
 
-  const { data: specializations = [], isLoading } = useQuery({
-    queryKey: ['specializations'],
-    queryFn: () => repository.getSpecializations(),
+  const { data: approaches = [], isLoading } = useQuery({
+    queryKey: ['medical-approaches'],
+    queryFn: () => repository.getMedicalApproaches(),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: { name: string; iconUrl?: string }) => repository.createSpecialization(data),
+    mutationFn: (data: { code: string; name: string; iconUrl?: string }) =>
+      repository.createMedicalApproach(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['specializations'] });
+      queryClient.invalidateQueries({ queryKey: ['medical-approaches'] });
       setIsSuccess(true);
       setTimeout(() => {
         setIsDialogOpen(false);
         resetForm();
       }, 1000);
-      toast.success('Specialization created successfully');
+      toast.success('Medical approach created successfully');
     },
     onError: (error: any) => {
-      setError(error.message || 'Failed to create specialization');
-      toast.error(error.message || 'Failed to create specialization');
+      setError(error.message || 'Failed to create medical approach');
+      toast.error(error.message || 'Failed to create medical approach');
     },
   });
 
@@ -83,38 +88,39 @@ export default function SpecializationsPage() {
       data,
     }: {
       id: string;
-      data: { name?: string; isActive?: boolean; iconUrl?: string | null };
-    }) => repository.updateSpecialization(id, data),
+      data: { code?: string; name?: string; isActive?: boolean; iconUrl?: string | null };
+    }) => repository.updateMedicalApproach(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['specializations'] });
+      queryClient.invalidateQueries({ queryKey: ['medical-approaches'] });
       setIsSuccess(true);
       setTimeout(() => {
         setIsDialogOpen(false);
         resetForm();
       }, 1000);
-      toast.success('Specialization updated successfully');
+      toast.success('Medical approach updated successfully');
     },
     onError: (error: any) => {
-      setError(error.message || 'Failed to update specialization');
-      toast.error(error.message || 'Failed to update specialization');
+      setError(error.message || 'Failed to update medical approach');
+      toast.error(error.message || 'Failed to update medical approach');
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => repository.deleteSpecialization(id),
+    mutationFn: (id: string) => repository.deleteMedicalApproach(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['specializations'] });
+      queryClient.invalidateQueries({ queryKey: ['medical-approaches'] });
       setIsDeleteDialogOpen(false);
       setDeletingId(null);
-      toast.success('Specialization deleted successfully');
+      toast.success('Medical approach deleted successfully');
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to delete specialization');
+      toast.error(error.message || 'Failed to delete medical approach');
     },
   });
 
   const resetForm = () => {
-    setValue('');
+    setCode('');
+    setName('');
     setIconUrl('');
     setIsActive(true);
     setError('');
@@ -128,13 +134,14 @@ export default function SpecializationsPage() {
     setIsDialogOpen(true);
   };
 
-  const handleOpenEdit = (specialization: Specialization) => {
-    setValue(specialization.name);
-    setIconUrl(specialization.iconUrl || '');
-    setIsActive(specialization.isActive);
+  const handleOpenEdit = (approach: MedicalApproach) => {
+    setCode(approach.code);
+    setName(approach.name);
+    setIconUrl(approach.iconUrl || '');
+    setIsActive(approach.isActive);
     setError('');
     setIsSuccess(false);
-    setEditingId(specialization.id);
+    setEditingId(approach.id);
     setIsDialogOpen(true);
   };
 
@@ -159,7 +166,7 @@ export default function SpecializationsPage() {
     try {
       const filename = sanitizeFilename(file.name) || `icon.${file.type.split('/')[1]}`;
       const { uploadUrl, publicUrl } = await repository.getPresignedIconUploadUrl(
-        'specialization_icon',
+        'medical_approach_icon',
         filename,
         file.type
       );
@@ -175,7 +182,11 @@ export default function SpecializationsPage() {
   };
 
   const handleSave = async () => {
-    if (!value.trim()) {
+    if (!code.trim()) {
+      setError('Code is required');
+      return;
+    }
+    if (!name.trim()) {
       setError('Name is required');
       return;
     }
@@ -187,18 +198,20 @@ export default function SpecializationsPage() {
         await updateMutation.mutateAsync({
           id: editingId,
           data: {
-            name: value.trim(),
+            code: code.trim(),
+            name: name.trim(),
             isActive,
             iconUrl: iconUrl.trim() || null,
           },
         });
       } else {
         await createMutation.mutateAsync({
-          name: value.trim(),
+          code: code.trim(),
+          name: name.trim(),
           iconUrl: iconUrl.trim() || undefined,
         });
       }
-    } catch (error) {
+    } catch {
       // Error handled in mutation
     } finally {
       setIsSaving(false);
@@ -211,7 +224,6 @@ export default function SpecializationsPage() {
     }
   };
 
-  // Keyboard shortcut: Cmd/Ctrl + S
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
@@ -226,9 +238,9 @@ export default function SpecializationsPage() {
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
     }
-  }, [isDialogOpen, value, isActive, editingId]);
+  }, [isDialogOpen, code, name, iconUrl, isActive, editingId]);
 
-  const columns: DataTableColumn<Specialization>[] = [
+  const columns: DataTableColumn<MedicalApproach>[] = [
     {
       id: 'icon',
       header: 'Icon',
@@ -248,10 +260,12 @@ export default function SpecializationsPage() {
       width: 60,
     },
     {
-      id: 'id',
-      header: 'ID',
-      cell: (row) => <span className="font-mono text-xs">{row.id}</span>,
-      width: 260,
+      id: 'code',
+      header: 'Code',
+      cell: (row) => <span className="font-mono text-sm">{row.code}</span>,
+      sortable: true,
+      accessorKey: 'code',
+      width: 140,
     },
     {
       id: 'name',
@@ -259,7 +273,7 @@ export default function SpecializationsPage() {
       cell: (row) => <span className="font-medium">{row.name}</span>,
       sortable: true,
       accessorKey: 'name',
-      width: 300,
+      width: 200,
     },
     {
       id: 'isActive',
@@ -275,18 +289,6 @@ export default function SpecializationsPage() {
         </span>
       ),
       width: 120,
-    },
-    {
-      id: 'createdAt',
-      header: 'Created At',
-      cell: (row) => new Date(row.createdAt).toLocaleDateString(),
-      width: 140,
-    },
-    {
-      id: 'updatedAt',
-      header: 'Updated At',
-      cell: (row) => new Date(row.updatedAt).toLocaleDateString(),
-      width: 140,
     },
     {
       id: 'actions',
@@ -319,32 +321,33 @@ export default function SpecializationsPage() {
     <div className="container mx-auto py-6 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Specializations</h1>
-          <p className="text-muted-foreground">Manage medical specializations</p>
+          <h1 className="text-3xl font-bold tracking-tight">Medical Approaches</h1>
+          <p className="text-muted-foreground">Manage medical approaches (e.g. Allopathy, Ayurveda)</p>
         </div>
         <Button onClick={handleOpenCreate}>
           <Plus className="mr-2 h-4 w-4" />
-          Create Specialization
+          Create Medical Approach
         </Button>
       </div>
 
       <DataTable
         columns={columns}
-        data={specializations}
+        data={approaches}
         mode="client"
         isLoading={isLoading}
         labels={{
-          loading: 'Loading specializations...',
-          noResults: 'No specializations found',
-          search: 'Search specializations...',
+          loading: 'Loading medical approaches...',
+          noResults: 'No medical approaches found',
+          search: 'Search medical approaches...',
         }}
       />
 
-      {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingId ? 'Edit Specialization' : 'Create Specialization'}</DialogTitle>
+            <DialogTitle>
+              {editingId ? 'Edit Medical Approach' : 'Create Medical Approach'}
+            </DialogTitle>
           </DialogHeader>
           <form
             className="space-y-6"
@@ -353,70 +356,82 @@ export default function SpecializationsPage() {
               handleSave();
             }}
           >
-            <div className="relative">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="code">Code</Label>
+                <div className="relative">
+                  <Input
+                    id="code"
+                    value={code}
+                    onChange={(e) => {
+                      setCode(e.target.value);
+                      setError('');
+                    }}
+                    placeholder="e.g. ALLOPATHY"
+                    className={cn(error ? 'border-destructive' : '')}
+                  />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                    <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">⌘S</kbd>
+                  </div>
+                </div>
+              </div>
+
               <FieldText
                 label="Name"
-                value={value}
+                value={name}
                 onChange={(e) => {
-                  setValue(e.target.value);
+                  setName(e.target.value);
                   setError('');
                 }}
+                placeholder="e.g. Allopathy"
                 status={error ? 'error' : 'default'}
                 statusMessage={error}
                 required
-                className="pr-12"
               />
-              <div className="absolute right-3 top-9">
-                <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">⌘S</kbd>
-              </div>
-            </div>
 
-            <FieldText
-              label="Icon URL"
-              value={iconUrl}
-              onChange={(e) => setIconUrl(e.target.value)}
-              placeholder="https://... or upload below"
-              className="text-sm"
-            />
-            <div className="space-y-2">
-              <span className="text-sm text-muted-foreground">Or upload icon</span>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={iconUploading}
-                  onClick={() => document.getElementById('specialization-icon-upload')?.click()}
-                >
-                  {iconUploading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Upload className="mr-2 h-4 w-4" />
-                  )}
-                  {iconUploading ? 'Uploading...' : 'Choose file'}
-                </Button>
-                <input
-                  id="specialization-icon-upload"
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.svg,image/jpeg,image/png,image/svg+xml"
-                  className="hidden"
-                  onChange={handleIconFileSelect}
-                />
+              <FieldText
+                label="Icon URL"
+                value={iconUrl}
+                onChange={(e) => setIconUrl(e.target.value)}
+                placeholder="https://... or upload below"
+                className="text-sm"
+              />
+              <div className="space-y-2">
+                <span className="text-sm text-muted-foreground">Or upload icon</span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={iconUploading}
+                    onClick={() => document.getElementById('medical-approach-icon-upload')?.click()}
+                  >
+                    {iconUploading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="mr-2 h-4 w-4" />
+                    )}
+                    {iconUploading ? 'Uploading...' : 'Choose file'}
+                  </Button>
+                  <input
+                    id="medical-approach-icon-upload"
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.svg,image/jpeg,image/png,image/svg+xml"
+                    className="hidden"
+                    onChange={handleIconFileSelect}
+                  />
+                </div>
               </div>
-            </div>
 
-            {editingId && (
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="isActive"
                   checked={isActive}
                   onCheckedChange={(checked) => setIsActive(Boolean(checked))}
                 />
-                <label htmlFor="isActive" className="text-sm font-medium leading-none">
-                  Active
-                </label>
+                <Label htmlFor="isActive">Active</Label>
               </div>
-            )}
+            </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancel
@@ -434,13 +449,13 @@ export default function SpecializationsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the specialization.
+              This action cannot be undone. This will permanently delete the medical approach.
+              Doctors using it will have their medical approach set to none.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

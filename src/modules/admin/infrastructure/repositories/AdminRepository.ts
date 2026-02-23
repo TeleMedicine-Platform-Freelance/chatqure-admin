@@ -6,7 +6,12 @@ import { injectable, inject } from 'inversify';
 import { CORE_SYMBOLS } from '@/core/di/symbols';
 import type { IHttpClient } from '@/shared/infrastructure/http/HttpClient';
 import { BaseRepository } from '@/shared/infrastructure/repositories/BaseRepository';
-import type { IAdminRepository, AdminAnalyticsOverview, AdminDashboardMetrics } from '../../domain/ports/IAdminRepository';
+import type {
+  IAdminRepository,
+  AdminAnalyticsOverview,
+  AdminDashboardMetrics,
+  AdminListItem,
+} from '../../domain/ports/IAdminRepository';
 import type { DoctorDetails, DoctorListResponse } from '../../domain/models/Doctor';
 import type { PatientDetails, PatientListResponse } from '../../domain/models/Patient';
 import type { ConsultationMessage } from '../../domain/ports/IAdminRepository';
@@ -28,6 +33,21 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     return this.get<AdminDashboardMetrics>(
       '/api/v1/admin/dashboard/metrics',
       'Failed to fetch dashboard metrics'
+    );
+  }
+
+  async getAdmins(): Promise<{ data: AdminListItem[] }> {
+    return this.get<{ data: AdminListItem[] }>(
+      '/api/v1/admin/auth/admins',
+      'Failed to fetch admins'
+    );
+  }
+
+  async createAdmin(data: { email: string; password: string }): Promise<{ id: string; email: string; message: string }> {
+    return this.post<{ id: string; email: string; message: string }>(
+      '/api/v1/admin/auth/admins',
+      data,
+      'Failed to create admin'
     );
   }
 
@@ -165,6 +185,19 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     const url = this.appendQuery('/api/v1/upload/presigned-get', query);
     const data = await this.get<{ url: string }>(url, 'Failed to get document URL');
     return data.url;
+  }
+
+  async getPresignedIconUploadUrl(
+    purpose: 'specialization_icon' | 'medical_approach_icon',
+    filename: string,
+    contentType: string
+  ): Promise<{ uploadUrl: string; publicUrl: string }> {
+    const data = await this.post<{ uploadUrl: string; key: string; publicUrl: string }>(
+      '/api/v1/upload/presigned',
+      { purpose, filename, contentType },
+      'Failed to get upload URL'
+    );
+    return { uploadUrl: data.uploadUrl, publicUrl: data.publicUrl };
   }
 
   // Patients
@@ -306,12 +339,12 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     );
   }
 
-  async createSpecialization(data: { name: string }): Promise<any> {
+  async createSpecialization(data: { name: string; iconUrl?: string }): Promise<any> {
     const response = await this.post<{ data: any }>(`${AdminRepository.REFERENCE_DATA}/specializations`, data, 'Failed to create specialization');
     return response.data;
   }
 
-  async updateSpecialization(id: string, data: { name?: string; isActive?: boolean }): Promise<any> {
+  async updateSpecialization(id: string, data: { name?: string; isActive?: boolean; iconUrl?: string | null }): Promise<any> {
     const response = await this.put<{ data: any }>(`${AdminRepository.REFERENCE_DATA}/specializations/${id}`, data, 'Failed to update specialization');
     return response.data;
   }
@@ -465,5 +498,41 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
 
   async deleteMedicalCouncil(id: string): Promise<void> {
     await this.delete<void>(`${AdminRepository.REFERENCE_DATA}/medical-councils/${id}`, 'Failed to delete medical council');
+  }
+
+  // Medical Approaches
+  async getMedicalApproaches(): Promise<any[]> {
+    return this.get<any[]>(
+      `${AdminRepository.REFERENCE_DATA}/medical-approaches`,
+      'Failed to fetch medical approaches'
+    );
+  }
+
+  async createMedicalApproach(data: { code: string; name: string; iconUrl?: string }): Promise<any> {
+    const response = await this.post<{ data: any }>(
+      `${AdminRepository.REFERENCE_DATA}/medical-approaches`,
+      data,
+      'Failed to create medical approach'
+    );
+    return response.data;
+  }
+
+  async updateMedicalApproach(
+    id: string,
+    data: { code?: string; name?: string; isActive?: boolean; iconUrl?: string | null }
+  ): Promise<any> {
+    const response = await this.put<{ data: any }>(
+      `${AdminRepository.REFERENCE_DATA}/medical-approaches/${id}`,
+      data,
+      'Failed to update medical approach'
+    );
+    return response.data;
+  }
+
+  async deleteMedicalApproach(id: string): Promise<void> {
+    await this.delete<void>(
+      `${AdminRepository.REFERENCE_DATA}/medical-approaches/${id}`,
+      'Failed to delete medical approach'
+    );
   }
 }

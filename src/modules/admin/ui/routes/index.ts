@@ -3,6 +3,7 @@ import { ADMIN_PATHS } from './paths';
 import { lazy } from 'react';
 
 const AdminDashboardPage = lazy(() => import('../pages/AdminDashboardPage'));
+const AdminsPage = lazy(() => import('../pages/AdminsPage'));
 const DoctorsPage = lazy(() => import('../pages/DoctorsPage'));
 const PendingDoctorsPage = lazy(() => import('../pages/PendingDoctorsPage'));
 const DoctorDetailsPage = lazy(() => import('../pages/DoctorDetailsPage'));
@@ -16,6 +17,7 @@ const SymptomsPage = lazy(() => import('../pages/SymptomsPage'));
 const SymptomCategoriesPage = lazy(() => import('../pages/SymptomCategoriesPage'));
 const LanguagesPage = lazy(() => import('../pages/LanguagesPage'));
 const MedicalCouncilPage = lazy(() => import('../pages/MedicalCouncilPage'));
+const MedicalApproachesPage = lazy(() => import('../pages/MedicalApproachesPage'));
 const AddTestMoneyPage = lazy(() => import('../pages/AddTestMoneyPage'));
 
 export const ADMIN_ROUTES: ModuleRoute[] = [
@@ -25,6 +27,13 @@ export const ADMIN_ROUTES: ModuleRoute[] = [
     layout: 'app',
     title: 'Dashboard',
     component: AdminDashboardPage,
+  },
+  {
+    path: ADMIN_PATHS.ADMINS,
+    module: 'admin',
+    layout: 'app',
+    title: 'Admins',
+    component: AdminsPage,
   },
   {
     path: ADMIN_PATHS.DOCTORS,
@@ -116,6 +125,13 @@ export const ADMIN_ROUTES: ModuleRoute[] = [
     layout: 'app',
     title: 'Medical Council',
     component: MedicalCouncilPage,
+  },
+  {
+    path: ADMIN_PATHS.MEDICAL_APPROACHES,
+    module: 'admin',
+    layout: 'app',
+    title: 'Medical Approaches',
+    component: MedicalApproachesPage,
   },
   {
     path: ADMIN_PATHS.ADD_TEST_MONEY,

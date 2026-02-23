@@ -158,6 +158,7 @@ export const navigationSections: NavGroup[] = [
     id: 'admin-control',
     items: [
       { id: 'dashboard', icon: 'layout-dashboard', to: '/admin', navRole: 'primary' },
+      { id: 'admins', icon: 'lock', to: '/admin/admins', navRole: 'secondary' },
       {
         id: 'doctor',
         icon: 'users',
@@ -176,6 +177,7 @@ export const navigationSections: NavGroup[] = [
       { id: 'symptom-categories', icon: 'list-ordered', to: '/admin/symptom-categories', navRole: 'secondary' },
       { id: 'languages', icon: 'type', to: '/admin/languages', navRole: 'secondary' },
       { id: 'medical-council', icon: 'shield-check', to: '/admin/medical-council', navRole: 'secondary' },
+      { id: 'medical-approaches', icon: 'sparkles', to: '/admin/medical-approaches', navRole: 'secondary' },
       { id: 'add-test-money', icon: 'zap', to: '/admin/dev/add-test-money', navRole: 'secondary' },
     ],
   },
