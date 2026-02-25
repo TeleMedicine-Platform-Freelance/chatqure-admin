@@ -155,6 +155,9 @@ export interface IAdminRepository {
     page?: number;
     pageSize?: number;
   }): Promise<any>;
+  getPayoutRequest(id: string): Promise<any>;
+  approvePayoutRequest(id: string): Promise<{ message: string }>;
+  rejectPayoutRequest(id: string, reason: string): Promise<{ message: string }>;
   
   // Payments
   getPayments(params?: {

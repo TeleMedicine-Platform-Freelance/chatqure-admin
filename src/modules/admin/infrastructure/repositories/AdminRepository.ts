@@ -293,7 +293,33 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     if (params?.page !== undefined) backendParams.page = params.page;
     if (params?.pageSize !== undefined) backendParams.limit = params.pageSize;
     const query = this.buildQueryString(backendParams);
-    return this.get<any>(this.appendQuery('/api/v1/admin/payouts/requests', query), 'Failed to fetch payout requests');
+    return this.get<any>(
+      this.appendQuery('/api/v1/admin/payout/requests', query),
+      'Failed to fetch payout requests'
+    );
+  }
+
+  async getPayoutRequest(id: string): Promise<any> {
+    return this.get<any>(
+      `/api/v1/admin/payout/requests/${id}`,
+      'Failed to fetch payout request details'
+    );
+  }
+
+  async approvePayoutRequest(id: string): Promise<{ message: string }> {
+    return this.post<{ message: string }>(
+      `/api/v1/admin/payout/requests/${id}/approve`,
+      {},
+      'Failed to approve payout request'
+    );
+  }
+
+  async rejectPayoutRequest(id: string, reason: string): Promise<{ message: string }> {
+    return this.post<{ message: string }>(
+      `/api/v1/admin/payout/requests/${id}/reject`,
+      { reason },
+      'Failed to reject payout request'
+    );
   }
 
   // Payments
