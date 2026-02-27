@@ -69,7 +69,7 @@ export default function BookingsPage() {
         status: statusParam,
         search: globalFilter || undefined,
         sortBy,
-        sortOrder: sort?.desc ? 'desc' : 'asc',
+        sortOrder: sort ? (sort.desc ? 'desc' : 'asc') : 'desc',
       });
     },
   });

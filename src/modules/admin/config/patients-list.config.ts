@@ -48,7 +48,7 @@ export function getPatientsListApiParams(
   const sortBy = sort
     ? (PATIENTS_LIST_SORT_FIELDS[sort.id] ?? PATIENTS_LIST_DEFAULT_SORT_FIELD)
     : PATIENTS_LIST_DEFAULT_SORT_FIELD;
-  const sortOrder = sort?.desc ? 'desc' : 'asc';
+  const sortOrder = sort ? (sort.desc ? 'desc' : 'asc') : 'desc';
 
   return {
     page: pagination.pageIndex + 1,

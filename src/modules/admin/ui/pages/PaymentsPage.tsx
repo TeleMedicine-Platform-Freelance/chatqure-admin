@@ -68,7 +68,7 @@ export default function PaymentsPage() {
         page: pagination.pageIndex + 1,
         pageSize: pagination.pageSize,
         sortBy,
-        sortOrder: sort?.desc ? 'desc' : 'asc',
+        sortOrder: sort ? (sort.desc ? 'desc' : 'asc') : 'desc',
       });
     },
   });

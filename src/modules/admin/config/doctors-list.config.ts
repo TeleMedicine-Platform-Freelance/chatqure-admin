@@ -61,7 +61,7 @@ export function getDoctorsListApiParams(state: DoctorsListTableState): DoctorsLi
   const sortBy = sort
     ? (DOCTORS_LIST_SORT_FIELDS[sort.id] ?? DOCTORS_LIST_DEFAULT_SORT_FIELD)
     : DOCTORS_LIST_DEFAULT_SORT_FIELD;
-  const sortOrder = sort?.desc ? 'desc' : 'asc';
+  const sortOrder = sort ? (sort.desc ? 'desc' : 'asc') : 'desc';
 
   return {
     page: pagination.pageIndex + 1,
