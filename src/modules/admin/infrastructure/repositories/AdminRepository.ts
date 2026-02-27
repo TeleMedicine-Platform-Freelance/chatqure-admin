@@ -248,6 +248,7 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     page?: number;
     pageSize?: number;
     status?: string;
+    search?: string;
     fromDate?: string;
     toDate?: string;
     sortBy?: string;
@@ -257,6 +258,7 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     if (params?.page !== undefined) backendParams.page = params.page;
     if (params?.pageSize !== undefined) backendParams.limit = params.pageSize;
     if (params?.status) backendParams.status = params.status;
+    if (params?.search) backendParams.search = params.search;
     if (params?.fromDate) backendParams.fromDate = params.fromDate;
     if (params?.toDate) backendParams.toDate = params.toDate;
     if (params?.sortOrder) {
@@ -296,6 +298,30 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     return this.get<any>(
       this.appendQuery('/api/v1/admin/payout/requests', query),
       'Failed to fetch payout requests'
+    );
+  }
+
+  async getTransactions(params?: {
+    page?: number;
+    pageSize?: number;
+    from?: string;
+    to?: string;
+    transactionType?: string;
+    ownerType?: string;
+    consultationId?: string;
+  }): Promise<any> {
+    const backendParams: Record<string, string | number> = {};
+    if (params?.page !== undefined) backendParams.page = params.page;
+    if (params?.pageSize !== undefined) backendParams.limit = params.pageSize;
+    if (params?.from) backendParams.from = params.from;
+    if (params?.to) backendParams.to = params.to;
+    if (params?.transactionType) backendParams.transactionType = params.transactionType;
+    if (params?.ownerType) backendParams.ownerType = params.ownerType;
+    if (params?.consultationId) backendParams.consultationId = params.consultationId;
+    const query = this.buildQueryString(backendParams);
+    return this.get<any>(
+      this.appendQuery('/api/v1/admin/transactions', query),
+      'Failed to fetch transactions'
     );
   }
 
@@ -485,6 +511,42 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
 
   async deleteSymptomCategory(id: string): Promise<void> {
     await this.delete<void>(`${AdminRepository.REFERENCE_DATA}/symptom-categories/${id}`, 'Failed to delete symptom category');
+  }
+
+  // Medical Conditions
+  async getMedicalConditions(): Promise<any[]> {
+    return this.get<any[]>(
+      `${AdminRepository.REFERENCE_DATA}/medical-conditions`,
+      'Failed to fetch medical conditions'
+    );
+  }
+
+  async createMedicalCondition(data: { name: string }): Promise<any> {
+    const response = await this.post<{ data: any }>(
+      `${AdminRepository.REFERENCE_DATA}/medical-conditions`,
+      data,
+      'Failed to create medical condition'
+    );
+    return response.data;
+  }
+
+  async updateMedicalCondition(
+    id: string,
+    data: { name?: string; isActive?: boolean }
+  ): Promise<any> {
+    const response = await this.put<{ data: any }>(
+      `${AdminRepository.REFERENCE_DATA}/medical-conditions/${id}`,
+      data,
+      'Failed to update medical condition'
+    );
+    return response.data;
+  }
+
+  async deleteMedicalCondition(id: string): Promise<void> {
+    await this.delete<void>(
+      `${AdminRepository.REFERENCE_DATA}/medical-conditions/${id}`,
+      'Failed to delete medical condition'
+    );
   }
 
   // Languages

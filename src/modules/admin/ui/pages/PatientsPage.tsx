@@ -18,6 +18,7 @@ const PATIENTS_URL_SYNC = {
   serialize: serializePatientsListStateToParams,
   parse: parsePatientsListParamsToState,
 };
+import PageLayout from '@/shared/ui/components/PageLayout';
 import { DataTable, type DataTableColumn } from '@/shared/ui/components/table/DataTable';
 import { Badge } from '@/shared/ui/shadcn/components/ui/badge';
 import { Button } from '@/shadcn/components/ui/button';
@@ -180,17 +181,13 @@ export default function PatientsPage() {
   );
 
   return (
-    <div className="container mx-auto py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Patients</h1>
-          <p className="text-muted-foreground">
-            Manage and view all registered patients
-          </p>
-        </div>
-      </div>
-
-      <DataTable
+    <PageLayout
+      title="Patients"
+      subtitle="Manage and view all registered patients"
+      gap="md"
+    >
+      <div className="space-y-4">
+        <DataTable
         columns={columns}
         data={data?.data ?? []}
         mode="server"
@@ -227,6 +224,7 @@ export default function PatientsPage() {
           </div>
         }
       />
-    </div>
+      </div>
+    </PageLayout>
   );
 }

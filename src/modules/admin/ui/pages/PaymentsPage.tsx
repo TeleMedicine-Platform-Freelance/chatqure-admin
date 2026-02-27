@@ -4,6 +4,7 @@ import type { SortingState, PaginationState } from '@tanstack/react-table';
 import { useService } from '@/app/providers/useDI';
 import { ADMIN_SYMBOLS } from '../../di/symbols';
 import type { IAdminRepository } from '../../domain/ports/IAdminRepository';
+import PageLayout from '@/shared/ui/components/PageLayout';
 import { DataTable, type DataTableColumn } from '@/shared/ui/components/table/DataTable';
 import { Badge } from '@/shared/ui/shadcn/components/ui/badge';
 import { Button } from '@/shadcn/components/ui/button';
@@ -206,15 +207,13 @@ export default function PaymentsPage() {
   );
 
   return (
-    <div className="container mx-auto py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Payments</h1>
-          <p className="text-muted-foreground">View and verify payment orders</p>
-        </div>
-      </div>
-
-      <DataTable
+    <PageLayout
+      title="Payments"
+      subtitle="View and verify payment orders"
+      gap="md"
+    >
+      <div className="space-y-4">
+        <DataTable
         columns={columns}
         data={data?.data || []}
         mode="server"
@@ -276,6 +275,7 @@ export default function PaymentsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </PageLayout>
   );
 }

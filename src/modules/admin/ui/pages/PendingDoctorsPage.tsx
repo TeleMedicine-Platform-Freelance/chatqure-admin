@@ -18,6 +18,7 @@ const PENDING_DOCTORS_URL_SYNC = {
   serialize: serializePendingDoctorsListStateToParams,
   parse: parsePendingDoctorsListParamsToState,
 };
+import PageLayout from '@/shared/ui/components/PageLayout';
 import { DataTable, type DataTableColumn } from '@/shared/ui/components/table/DataTable';
 import { Badge } from '@/shared/ui/shadcn/components/ui/badge';
 import { Button } from '@/shadcn/components/ui/button';
@@ -170,17 +171,13 @@ export default function PendingDoctorsPage() {
   );
 
   return (
-    <div className="container mx-auto py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Pending Doctors</h1>
-          <p className="text-muted-foreground">
-            Review and manage doctors with pending KYC applications
-          </p>
-        </div>
-      </div>
-
-      <DataTable
+    <PageLayout
+      title="Pending Doctors"
+      subtitle="Review and manage doctors with pending KYC applications"
+      gap="md"
+    >
+      <div className="space-y-4">
+        <DataTable
         columns={columns}
         data={data?.data ?? []}
         mode="server"
@@ -212,6 +209,7 @@ export default function PendingDoctorsPage() {
           </div>
         }
       />
-    </div>
+      </div>
+    </PageLayout>
   );
 }

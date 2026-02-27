@@ -12,10 +12,12 @@ const PatientDetailsPage = lazy(() => import('../pages/PatientDetailsPage'));
 const BookingsPage = lazy(() => import('../pages/BookingsPage'));
 const PayoutRequestsPage = lazy(() => import('../pages/PayoutRequestsPage'));
 const PaymentsPage = lazy(() => import('../pages/PaymentsPage'));
+const TransactionsPage = lazy(() => import('../pages/TransactionsPage'));
 const SpecializationsPage = lazy(() => import('../pages/SpecializationsPage'));
 const SymptomsPage = lazy(() => import('../pages/SymptomsPage'));
 const SymptomCategoriesPage = lazy(() => import('../pages/SymptomCategoriesPage'));
 const LanguagesPage = lazy(() => import('../pages/LanguagesPage'));
+const MedicalConditionsPage = lazy(() => import('../pages/MedicalConditionsPage'));
 const MedicalCouncilPage = lazy(() => import('../pages/MedicalCouncilPage'));
 const MedicalApproachesPage = lazy(() => import('../pages/MedicalApproachesPage'));
 const AddTestMoneyPage = lazy(() => import('../pages/AddTestMoneyPage'));
@@ -92,6 +94,13 @@ export const ADMIN_ROUTES: ModuleRoute[] = [
     component: PaymentsPage,
   },
   {
+    path: ADMIN_PATHS.TRANSACTIONS,
+    module: 'admin',
+    layout: 'app',
+    title: 'Transactions',
+    component: TransactionsPage,
+  },
+  {
     path: ADMIN_PATHS.SPECIALIZATIONS,
     module: 'admin',
     layout: 'app',
@@ -118,6 +127,13 @@ export const ADMIN_ROUTES: ModuleRoute[] = [
     layout: 'app',
     title: 'Languages',
     component: LanguagesPage,
+  },
+  {
+    path: ADMIN_PATHS.MEDICAL_CONDITIONS,
+    module: 'admin',
+    layout: 'app',
+    title: 'Medical Conditions',
+    component: MedicalConditionsPage,
   },
   {
     path: ADMIN_PATHS.MEDICAL_COUNCIL,

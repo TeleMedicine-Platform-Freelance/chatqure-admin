@@ -4,6 +4,7 @@ import type { SortingState, PaginationState, ColumnFiltersState } from '@tanstac
 import { useService } from '@/app/providers/useDI';
 import { ADMIN_SYMBOLS } from '../../di/symbols';
 import type { IAdminRepository } from '../../domain/ports/IAdminRepository';
+import PageLayout from '@/shared/ui/components/PageLayout';
 import { DataTable, type DataTableColumn } from '@/shared/ui/components/table/DataTable';
 import { Badge } from '@/shared/ui/shadcn/components/ui/badge';
 import { Button } from '@/shadcn/components/ui/button';
@@ -37,7 +38,7 @@ export default function BookingsPage() {
   const repository = useService<IAdminRepository>(ADMIN_SYMBOLS.IAdminRepository);
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [_globalFilter, setGlobalFilter] = useState('');
+  const [globalFilter, setGlobalFilter] = useState('');
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   const statusParam = useMemo(() => {
@@ -58,7 +59,7 @@ export default function BookingsPage() {
   };
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['bookings', pagination, sorting, statusParam],
+    queryKey: ['bookings', pagination, sorting, statusParam, globalFilter],
     queryFn: async () => {
       const sort = sorting[0];
       const sortBy = sort ? mapSortField(sort.id) : undefined;
@@ -66,6 +67,7 @@ export default function BookingsPage() {
         page: pagination.pageIndex + 1,
         pageSize: pagination.pageSize,
         status: statusParam,
+        search: globalFilter || undefined,
         sortBy,
         sortOrder: sort?.desc ? 'desc' : 'asc',
       });
@@ -211,15 +213,13 @@ export default function BookingsPage() {
   );
 
   return (
-    <div className="container mx-auto py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Bookings</h1>
-          <p className="text-muted-foreground">View all consultation bookings</p>
-        </div>
-      </div>
-
-      <DataTable
+    <PageLayout
+      title="Bookings"
+      subtitle="View all consultation bookings"
+      gap="md"
+    >
+      <div className="space-y-4">
+        <DataTable
         columns={columns}
         data={data?.data || []}
         mode="server"
@@ -251,14 +251,15 @@ export default function BookingsPage() {
         }
       />
 
-      <BookingMessagesSheet
-        open={messagesSheetOpen}
-        onOpenChange={(open) => {
-          setMessagesSheetOpen(open);
-          if (!open) setMessagesBooking(null);
-        }}
-        booking={messagesBooking}
-      />
-    </div>
+        <BookingMessagesSheet
+          open={messagesSheetOpen}
+          onOpenChange={(open) => {
+            setMessagesSheetOpen(open);
+            if (!open) setMessagesBooking(null);
+          }}
+          booking={messagesBooking}
+        />
+      </div>
+    </PageLayout>
   );
 }

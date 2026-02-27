@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useService } from '@/app/providers/useDI';
 import { ADMIN_SYMBOLS } from '../../di/symbols';
 import type { IAdminRepository, AdminListItem } from '../../domain/ports/IAdminRepository';
+import PageLayout from '@/shared/ui/components/PageLayout';
 import { DataTable, type DataTableColumn } from '@/shared/ui/components/table/DataTable';
 import { Button } from '@/shadcn/components/ui/button';
 import {
@@ -127,19 +128,19 @@ export default function AdminsPage() {
   ];
 
   return (
-    <div className="container mx-auto py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Admins</h1>
-          <p className="text-muted-foreground">Manage admin users who can access this panel</p>
-        </div>
+    <PageLayout
+      title="Admins"
+      subtitle="Manage admin users who can access this panel"
+      actions={
         <Button onClick={handleOpenCreate}>
           <Plus className="mr-2 h-4 w-4" />
           Add admin
         </Button>
-      </div>
-
-      <DataTable
+      }
+      gap="md"
+    >
+      <div className="space-y-4">
+        <DataTable
         columns={columns}
         data={admins}
         mode="client"
@@ -204,6 +205,7 @@ export default function AdminsPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </PageLayout>
   );
 }

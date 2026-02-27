@@ -14,6 +14,7 @@ import {
   DOCTORS_LIST_KYC_STATUSES,
 } from '../../config/doctors-list.config';
 import { useServerTableState } from '@/shared/hooks/useServerTableState';
+import PageLayout from '@/shared/ui/components/PageLayout';
 import { DataTable, type DataTableColumn } from '@/shared/ui/components/table/DataTable';
 import { Badge } from '@/shared/ui/shadcn/components/ui/badge';
 import { Button } from '@/shadcn/components/ui/button';
@@ -206,17 +207,13 @@ export default function DoctorsPage() {
   );
 
   return (
-    <div className="container mx-auto py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Doctors</h1>
-          <p className="text-muted-foreground">
-            Manage and view all registered doctors
-          </p>
-        </div>
-      </div>
-
-      <DataTable
+    <PageLayout
+      title="Doctors"
+      subtitle="Manage and view all registered doctors"
+      gap="md"
+    >
+      <div className="space-y-4">
+        <DataTable
         columns={columns}
         data={data?.data || []}
         mode="server"
@@ -253,6 +250,7 @@ export default function DoctorsPage() {
           </div>
         }
       />
-    </div>
+      </div>
+    </PageLayout>
   );
 }

@@ -9,11 +9,13 @@ export const ADMIN_PATHS = {
   BOOKINGS: '/admin/bookings',
   PAYOUTS: '/admin/payouts',
   PAYMENTS: '/admin/payments',
+  TRANSACTIONS: '/admin/transactions',
   ADD_TEST_MONEY: '/admin/dev/add-test-money',
   SPECIALIZATIONS: '/admin/specializations',
   SYMPTOMS: '/admin/symptoms',
   SYMPTOM_CATEGORIES: '/admin/symptom-categories',
   LANGUAGES: '/admin/languages',
+  MEDICAL_CONDITIONS: '/admin/medical-conditions',
   MEDICAL_COUNCIL: '/admin/medical-council',
   MEDICAL_APPROACHES: '/admin/medical-approaches',
 } as const;

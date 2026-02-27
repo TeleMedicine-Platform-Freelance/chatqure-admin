@@ -4,6 +4,7 @@ import type { PaginationState } from '@tanstack/react-table';
 import { useService } from '@/app/providers/useDI';
 import { ADMIN_SYMBOLS } from '../../di/symbols';
 import type { IAdminRepository } from '../../domain/ports/IAdminRepository';
+import PageLayout from '@/shared/ui/components/PageLayout';
 import { DataTable, type DataTableColumn } from '@/shared/ui/components/table/DataTable';
 import { Badge } from '@/shared/ui/shadcn/components/ui/badge';
 import {
@@ -234,15 +235,13 @@ export default function PayoutRequestsPage() {
   );
 
   return (
-    <div className="container mx-auto py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Payout Requests</h1>
-          <p className="text-muted-foreground">Manage doctor payout withdrawal requests</p>
-        </div>
-      </div>
-
-      <DataTable
+    <PageLayout
+      title="Payout Requests"
+      subtitle="Manage doctor payout withdrawal requests"
+      gap="md"
+    >
+      <div className="space-y-4">
+        <DataTable
         columns={columns}
         data={data?.data || []}
         mode="server"
@@ -398,6 +397,7 @@ export default function PayoutRequestsPage() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </PageLayout>
   );
 }

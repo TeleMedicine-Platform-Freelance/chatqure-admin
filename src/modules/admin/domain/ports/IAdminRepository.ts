@@ -135,6 +135,7 @@ export interface IAdminRepository {
     page?: number;
     pageSize?: number;
     status?: string;
+    search?: string;
     fromDate?: string;
     toDate?: string;
     sortBy?: string;
@@ -150,6 +151,17 @@ export interface IAdminRepository {
     params?: { limit?: number; offset?: number; order?: 'asc' | 'desc' }
   ): Promise<{ data: ConsultationMessage[]; total: number }>;
   
+  // Wallet transactions (admin)
+  getTransactions(params?: {
+    page?: number;
+    pageSize?: number;
+    from?: string;
+    to?: string;
+    transactionType?: string;
+    ownerType?: string;
+    consultationId?: string;
+  }): Promise<any>;
+
   // Payouts
   getPayoutRequests(params?: {
     page?: number;
@@ -224,7 +236,16 @@ export interface IAdminRepository {
     symptomIds?: string[] 
   }): Promise<any>;
   deleteSymptomCategory(id: string): Promise<void>;
-  
+
+  // Medical Conditions
+  getMedicalConditions(): Promise<any[]>;
+  createMedicalCondition(data: { name: string }): Promise<any>;
+  updateMedicalCondition(
+    id: string,
+    data: { name?: string; isActive?: boolean }
+  ): Promise<any>;
+  deleteMedicalCondition(id: string): Promise<void>;
+
   // Languages
   getLanguages(): Promise<any[]>;
   createLanguage(data: { name: string; code: string }): Promise<any>;

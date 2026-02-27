@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useService } from '@/app/providers/useDI';
 import { ADMIN_SYMBOLS } from '../../di/symbols';
 import type { IAdminRepository } from '../../domain/ports/IAdminRepository';
+import PageLayout from '@/shared/ui/components/PageLayout';
 import { DataTable, type DataTableColumn } from '@/shared/ui/components/table/DataTable';
 import { Button } from '@/shadcn/components/ui/button';
 import {
@@ -318,19 +319,19 @@ export default function MedicalApproachesPage() {
   ];
 
   return (
-    <div className="container mx-auto py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Medical Approaches</h1>
-          <p className="text-muted-foreground">Manage medical approaches (e.g. Allopathy, Ayurveda)</p>
-        </div>
+    <PageLayout
+      title="Medical Approaches"
+      subtitle="Manage medical approaches (e.g. Allopathy, Ayurveda)"
+      actions={
         <Button onClick={handleOpenCreate}>
           <Plus className="mr-2 h-4 w-4" />
           Create Medical Approach
         </Button>
-      </div>
-
-      <DataTable
+      }
+      gap="md"
+    >
+      <div className="space-y-4">
+        <DataTable
         columns={columns}
         data={approaches}
         mode="client"
@@ -476,6 +477,7 @@ export default function MedicalApproachesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </PageLayout>
   );
 }
