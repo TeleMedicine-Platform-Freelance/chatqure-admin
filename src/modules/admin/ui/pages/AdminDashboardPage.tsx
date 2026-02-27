@@ -72,8 +72,14 @@ export default function AdminDashboardPage() {
     isError: analyticsError,
     error: analyticsErr,
   } = useQuery<AdminAnalyticsOverview>({
-    queryKey: ['admin', 'analytics', 'overview'],
-    queryFn: () => repository.getAnalyticsOverview(),
+    queryKey: [
+      'admin',
+      'analytics',
+      'overview',
+      metricsRange,
+      ...(metricsRange === 'custom' ? [customFrom, customTo] : []),
+    ],
+    queryFn: () => repository.getAnalyticsOverview(metricsParams),
   });
 
   const {
@@ -160,7 +166,13 @@ export default function AdminDashboardPage() {
               { label: 'Verified Doctors', value: overview.verifiedDoctors, subtitle: 'KYC verified', icon: UserCheck, positive: true },
               { label: 'Pending KYC', value: overview.pendingKyc, subtitle: 'Awaiting verification', icon: FileClock, positive: overview.pendingKyc === 0 },
               { label: 'Total Patients', value: overview.totalPatients, subtitle: 'Registered patients', icon: UserCircle, positive: true },
-              { label: 'Total Consultations', value: overview.totalConsultations, subtitle: 'All time', icon: Video, positive: true },
+              {
+                label: 'Total Consultations',
+                value: overview.totalConsultations,
+                subtitle: metricsRange === 'all_time' ? 'Settled (all time)' : 'Settled (selected range)',
+                icon: Video,
+                positive: true,
+              },
               { label: 'Active Consultations', value: overview.activeConsultations, subtitle: 'In progress', icon: Activity, positive: true },
             ].map((stat) => (
               <MetricCard

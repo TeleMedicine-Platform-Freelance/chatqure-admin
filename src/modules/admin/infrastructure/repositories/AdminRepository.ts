@@ -23,9 +23,18 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     super(http);
   }
 
-  async getAnalyticsOverview(): Promise<AdminAnalyticsOverview> {
+  async getAnalyticsOverview(params?: {
+    range?: AdminDashboardMetricsRange;
+    from?: string;
+    to?: string;
+  }): Promise<AdminAnalyticsOverview> {
+    const query = this.buildQueryString({
+      range: params?.range,
+      from: params?.from,
+      to: params?.to,
+    });
     return this.get<AdminAnalyticsOverview>(
-      '/api/v1/admin/analytics/overview',
+      this.appendQuery('/api/v1/admin/analytics/overview', query),
       'Failed to fetch analytics overview'
     );
   }

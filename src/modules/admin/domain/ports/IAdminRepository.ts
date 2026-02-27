@@ -64,7 +64,11 @@ export interface ConsultationMessage {
 }
 
 export interface IAdminRepository {
-  getAnalyticsOverview(): Promise<AdminAnalyticsOverview>;
+  getAnalyticsOverview(params?: {
+    range?: AdminDashboardMetricsRange;
+    from?: string;
+    to?: string;
+  }): Promise<AdminAnalyticsOverview>;
   getDashboardMetrics(params?: {
     range?: AdminDashboardMetricsRange;
     from?: string;
