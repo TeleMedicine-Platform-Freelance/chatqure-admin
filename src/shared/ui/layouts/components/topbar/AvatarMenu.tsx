@@ -13,7 +13,6 @@ import { CORE_SYMBOLS } from '@/core/di/symbols';
 import type { IAuthService } from '@/modules/auth/application/ports/IAuthService';
 import type { ILogger } from '@/shared/utils/Logger';
 import type { LucideIcon } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 type MenuEntry = {
     type: 'item';
@@ -33,7 +32,6 @@ const AvatarMenu: React.FC = () => {
   const authService = useService<IAuthService>(AUTH_SYMBOLS.IAuthService);
   const logger = useService<ILogger>(CORE_SYMBOLS.ILogger);
   const currentUser = authService.getCurrentUser();
-  const navigate = useNavigate();
 
   const handleLogout = React.useCallback(async () => {
     try {
