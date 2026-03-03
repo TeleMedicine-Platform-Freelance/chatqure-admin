@@ -39,6 +39,7 @@ import type {
   Role,
   SendOtpDTO,
   VerifyOtpDTO,
+  ChangePasswordDTO,
 } from '@/modules/auth/domain/models/AuthModels';
 
 export interface IAuthRepository {
@@ -48,6 +49,7 @@ export interface IAuthRepository {
   register(dto: RegisterDTO): Promise<RegisterResponse>;
   forgotPassword(dto: ForgotPasswordDTO): Promise<ForgotPasswordResponse>;
   resetPassword(dto: ResetPasswordDTO): Promise<ResetPasswordResponse>;
+  changePassword(dto: ChangePasswordDTO): Promise<{ message: string }>;
   verifyEmail(dto: VerifyEmailDTO): Promise<VerifyEmailResponse>;
   setupMfa(dto: MfaSetupDTO): Promise<MfaSetupResponse>;
   verifyMfa(dto: MfaVerifyDTO): Promise<MfaVerifyResponse>;
@@ -167,6 +169,15 @@ export class AuthRepository extends BaseRepository implements IAuthRepository {
   async resetPassword(_dto: ResetPasswordDTO): Promise<ResetPasswordResponse> {
     // Backend doesn't have admin password reset endpoints yet
     throw new Error('Password reset is not available for admin users. Please contact your administrator.');
+  }
+
+  async changePassword(dto: ChangePasswordDTO): Promise<{ message: string }> {
+    const { confirmPassword, ...payload } = dto;
+    return this.post<{ message: string }, { currentPassword: string; newPassword: string }>(
+      `${this.adminAuthBaseUrl}/change-password`,
+      payload,
+      'Failed to change password'
+    );
   }
 
   async verifyEmail(_dto: VerifyEmailDTO): Promise<VerifyEmailResponse> {

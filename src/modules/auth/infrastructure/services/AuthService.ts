@@ -25,6 +25,7 @@ import type {
   RegisterDTO,
   ForgotPasswordDTO,
   ResetPasswordDTO,
+  ChangePasswordDTO,
   VerifyEmailDTO,
   MfaSetupDTO,
   MfaVerifyDTO,
@@ -206,6 +207,24 @@ export class AuthService implements IAuthService {
       this.logger.info('Password reset successful');
     } catch (error) {
       this.logger.error('Reset password failed', error);
+      throw error;
+    }
+  }
+
+  async changePassword(dto: ChangePasswordDTO): Promise<void> {
+    const userId = this.currentUser?.id;
+    try {
+      this.logger.info('Change password attempt', { userId });
+      await this.repository.changePassword({
+        currentPassword: dto.currentPassword,
+        newPassword: dto.newPassword,
+      });
+
+      this.logger.info('Password changed, clearing session and publishing logout', { userId });
+      this.clearSession();
+      this.eventHandler.publishLogout(userId);
+    } catch (error) {
+      this.logger.error('Change password failed', error);
       throw error;
     }
   }

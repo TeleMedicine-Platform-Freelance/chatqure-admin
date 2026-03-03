@@ -5,6 +5,7 @@ import type {
   RegisterDTO,
   ForgotPasswordDTO,
   ResetPasswordDTO,
+  ChangePasswordDTO,
   VerifyEmailDTO,
   MfaSetupDTO,
   MfaVerifyDTO,
@@ -27,6 +28,7 @@ export interface IAuthService {
   // Password Management
   forgotPassword(dto: ForgotPasswordDTO): Promise<void>;
   resetPassword(dto: ResetPasswordDTO): Promise<void>;
+  changePassword(dto: ChangePasswordDTO): Promise<void>;
   
   // Email Verification
   verifyEmail(dto: VerifyEmailDTO): Promise<void>;
