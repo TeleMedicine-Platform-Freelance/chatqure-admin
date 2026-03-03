@@ -2,7 +2,7 @@ import React from 'react';
 import AnimatedDropdown from '@/shared/ui/components/animated-dropdown/AnimatedDropdown';
 import AnimatedDropdownTrigger from '@/shared/ui/components/animated-dropdown/AnimatedDropdownTrigger';
 import AnimatedDropdownContent from '@/shared/ui/components/animated-dropdown/AnimatedDropdownContent';
-import { User, LogOut, Settings as SettingsIcon, BookText, Store, BadgePercent } from 'lucide-react';
+import { User, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { FloatingHover } from '@/shared/ui/components/FloatingHover';
 import { useHoverBackground } from '@/shared/hooks/useHoverBackground';
@@ -48,40 +48,13 @@ const AvatarMenu: React.FC = () => {
   const menuEntries = React.useMemo<MenuEntry[]>(() => [
     {
       type: 'item',
-      key: 'your-shop',
-      label: t('topbar.yourShop', { defaultValue: 'Your Shop' }),
-      icon: Store,
-    },
-    {
-      type: 'item',
-      key: 'affiliate',
-      label: t('topbar.affiliate', { defaultValue: 'Affiliate' }),
-      icon: BadgePercent,
-    },
-    {
-      type: 'item',
-      key: 'documentation',
-      label: t('topbar.docs', { defaultValue: 'Documentation' }),
-      icon: BookText,
-      onClick: () => window.open('https://docs.5studios.net/katalyst', '_blank', 'noopener,noreferrer'),
-    },
-    {
-      type: 'item',
-      key: 'settings',
-      label: t('topbar.settings', { defaultValue: 'Settings' }),
-      icon: SettingsIcon,
-      onClick: () => navigate('/settings'),
-    },
-    { type: 'separator', key: 'sep-3' },
-    {
-      type: 'item',
       key: 'logout',
       label: t('topbar.logout', { defaultValue: 'Log out' }),
       icon: LogOut,
       onClick: handleLogout,
       variant: 'danger',
     },
-  ], [t, navigate, handleLogout]);
+  ], [t, handleLogout]);
 
   return (
     <AnimatedDropdown placement="bottom-end" openOn="hover">

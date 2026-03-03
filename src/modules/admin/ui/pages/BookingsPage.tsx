@@ -164,7 +164,15 @@ export default function BookingsPage() {
         id: 'bookingDate',
         header: 'Booking Date',
         cell: (row) =>
-          row.bookingDate ? new Date(row.bookingDate).toLocaleString() : '-',
+          row.bookingDate
+            ? new Date(row.bookingDate).toLocaleString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : '-',
         sortable: true,
         accessorKey: 'bookingDate',
         width: 180,
@@ -173,7 +181,15 @@ export default function BookingsPage() {
         id: 'acceptedAt',
         header: 'Accepted At',
         cell: (row) =>
-          row.acceptedAt ? new Date(row.acceptedAt).toLocaleString() : '-',
+          row.acceptedAt
+            ? new Date(row.acceptedAt).toLocaleString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : '-',
         sortable: true,
         accessorKey: 'acceptedAt',
         width: 180,
@@ -182,7 +198,15 @@ export default function BookingsPage() {
         id: 'endedAt',
         header: 'Ended At',
         cell: (row) =>
-          row.endedAt ? new Date(row.endedAt).toLocaleString() : '-',
+          row.endedAt
+            ? new Date(row.endedAt).toLocaleString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : '-',
         sortable: true,
         accessorKey: 'endedAt',
         width: 180,

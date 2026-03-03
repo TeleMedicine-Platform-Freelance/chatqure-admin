@@ -46,7 +46,13 @@ function MessageBubble({ msg }: { msg: ConsultationMessage }) {
       </span>
       <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
       <span className="text-xs opacity-75">
-        {new Date(msg.createdAt).toLocaleString()}
+        {new Date(msg.createdAt).toLocaleString('en-GB', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })}
       </span>
     </div>
   );

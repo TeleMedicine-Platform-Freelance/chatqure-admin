@@ -317,7 +317,11 @@ const generateCode = (settings: AppLayoutSettings) => {
   return `
 /* 
   Katalyst Layout Configuration
-  Generated: ${new Date().toLocaleDateString()}
+  Generated: ${new Date().toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })}
 */
 
 // Implementation logic:

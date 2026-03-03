@@ -145,10 +145,10 @@ export default function PatientsPage() {
         header: 'Registered',
         cell: (row) =>
           row.createdAt
-            ? new Date(row.createdAt).toLocaleDateString(undefined, {
+            ? new Date(row.createdAt).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
                 year: 'numeric',
-                month: 'short',
-                day: 'numeric',
               })
             : '-',
         sortable: true,

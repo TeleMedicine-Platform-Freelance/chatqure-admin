@@ -106,10 +106,10 @@ export default function PatientDetailsPage() {
                   <Calendar className="h-3 w-3" /> Date of Birth
                 </p>
                 <p className="text-sm">
-                  {new Date(patient.dateOfBirth).toLocaleDateString(undefined, {
+                  {new Date(patient.dateOfBirth).toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: '2-digit',
                     year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
                   })}
                 </p>
               </div>
@@ -154,10 +154,10 @@ export default function PatientDetailsPage() {
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Registered</p>
                 <p className="text-sm">
-                  {new Date(patient.createdAt).toLocaleDateString(undefined, {
+                  {new Date(patient.createdAt).toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: '2-digit',
                     year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
                   })}
                 </p>
               </div>

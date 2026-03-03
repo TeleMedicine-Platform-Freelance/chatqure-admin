@@ -168,7 +168,13 @@ export default function PayoutRequestsPage() {
         cell: (row) => {
           const ts = row.createdAt;
           if (!ts) return '-';
-          return new Date(ts).toLocaleString();
+          return new Date(ts).toLocaleString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
         },
         width: 180,
       },
@@ -349,7 +355,15 @@ export default function PayoutRequestsPage() {
                   </div>
                   <div>
                     <span className="text-muted-foreground">Requested at: </span>
-                    <span>{new Date(selectedDetails.createdAt).toLocaleString()}</span>
+                  <span>
+                    {new Date(selectedDetails.createdAt).toLocaleString('en-GB', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
                   </div>
                   {selectedDetails.notes && (
                     <div>

@@ -144,7 +144,14 @@ export default function TransactionsPage() {
       {
         id: 'createdAt',
         header: 'Created At',
-        cell: (row) => new Date(row.createdAt).toLocaleString(),
+        cell: (row) =>
+          new Date(row.createdAt).toLocaleString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
         width: 200,
       },
     ],

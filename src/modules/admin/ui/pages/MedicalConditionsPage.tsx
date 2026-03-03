@@ -215,7 +215,13 @@ export default function MedicalConditionsPage() {
       cell: (row) =>
         row.createdAt ? (
           <span className="text-xs text-muted-foreground">
-            {new Date(row.createdAt).toLocaleString()}
+            {new Date(row.createdAt).toLocaleString('en-GB', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
           </span>
         ) : (
           <span className="text-xs text-muted-foreground">—</span>

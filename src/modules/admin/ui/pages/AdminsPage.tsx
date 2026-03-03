@@ -115,14 +115,29 @@ export default function AdminsPage() {
     {
       id: 'createdAt',
       header: 'Created',
-      cell: (row) => new Date(row.createdAt).toLocaleString(),
+      cell: (row) =>
+        new Date(row.createdAt).toLocaleString('en-GB', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
       width: 180,
     },
     {
       id: 'lastLoginAt',
       header: 'Last login',
       cell: (row) =>
-        row.lastLoginAt ? new Date(row.lastLoginAt).toLocaleString() : '—',
+        row.lastLoginAt
+          ? new Date(row.lastLoginAt).toLocaleString('en-GB', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : '—',
       width: 180,
     },
   ];

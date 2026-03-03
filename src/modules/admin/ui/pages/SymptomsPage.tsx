@@ -255,13 +255,23 @@ export default function SymptomsPage() {
     {
       id: 'createdAt',
       header: 'Created At',
-      cell: (row) => new Date(row.createdAt).toLocaleDateString(),
+      cell: (row) =>
+        new Date(row.createdAt).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        }),
       width: 140,
     },
     {
       id: 'updatedAt',
       header: 'Updated At',
-      cell: (row) => new Date(row.updatedAt).toLocaleDateString(),
+      cell: (row) =>
+        new Date(row.updatedAt).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        }),
       width: 140,
     },
     {

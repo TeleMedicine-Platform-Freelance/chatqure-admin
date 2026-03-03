@@ -97,10 +97,10 @@ const ChangelogSectionBlock: React.FC<{
 
 const VersionCard: React.FC<{ entry: ChangelogEntry }> = ({ entry }) => {
   const { t } = useTranslation('system');
-  const formattedDate = new Date(entry.date).toLocaleDateString('en-US', {
+  const formattedDate = new Date(entry.date).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
     year: 'numeric',
-    month: 'long',
-    day: 'numeric',
   });
 
   const sectionOrder: ChangelogSection[] = ['added', 'changed', 'fixed', 'deprecated', 'removed', 'security', 'notes'];
