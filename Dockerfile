@@ -11,13 +11,13 @@ RUN npm ci
 COPY . .
 
 # Build-time env (Vite inlines these at build)
-ARG VITE_APP_NAME=Katalyst Admin
+ARG VITE_APP_NAME=Chatqure Admin Panel
 ARG VITE_APP_ENVIRONMENT=production
 ARG VITE_API_BASE_URL=https://stagingapi.chatqure.com/
 ARG VITE_API_TIMEOUT=30000
 ARG VITE_AUTH_LOGIN_PATH=/auth/login
-ARG VITE_AUTH_TOKEN_KEY=katalyst_auth_token
-ARG VITE_AUTH_CURRENT_USER_KEY=katalyst_auth_current_user
+ARG VITE_AUTH_TOKEN_KEY=chatqure_admin_auth_token
+ARG VITE_AUTH_CURRENT_USER_KEY=chatqure_admin_current_user
 ARG VITE_USE_MSW=false
 
 ENV VITE_APP_NAME=$VITE_APP_NAME \
