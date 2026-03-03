@@ -72,7 +72,7 @@ export default function AdminDashboardPage() {
     isError: analyticsError,
     error: analyticsErr,
   } = useQuery<AdminAnalyticsOverview>({
-    queryKey: [
+      queryKey: [
       'admin',
       'analytics',
       'overview',
