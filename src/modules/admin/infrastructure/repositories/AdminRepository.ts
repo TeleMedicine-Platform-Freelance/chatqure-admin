@@ -70,6 +70,21 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     );
   }
 
+  async deleteAdmin(id: string): Promise<{ message: string }> {
+    return this.delete<{ message: string }>(
+      `/api/v1/admin/auth/admins/${id}`,
+      'Failed to delete admin'
+    );
+  }
+
+  async deactivateAdmin(id: string): Promise<{ message: string }> {
+    return this.post<{ message: string }>(
+      `/api/v1/admin/auth/admins/${id}/inactive`,
+      {},
+      'Failed to deactivate admin'
+    );
+  }
+
   async getDoctors(params?: {
     page?: number;
     pageSize?: number;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useService } from '@/app/providers/useDI';
 import { ADMIN_SYMBOLS } from '../../di/symbols';
@@ -13,8 +13,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shared/ui/shadcn/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/shadcn/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/shadcn/components/ui/dropdown-menu';
 import FieldText from '@/shared/ui/components/forms/composites/field/FieldText';
-import { Plus, Check, Loader2 } from 'lucide-react';
+import { Plus, Check, Loader2, MoreHorizontal, Ban, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/shadcn/lib/utils';
 
@@ -27,6 +43,8 @@ export default function AdminsPage() {
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [deactivatingAdmin, setDeactivatingAdmin] = useState<AdminListItem | null>(null);
+  const [deletingAdmin, setDeletingAdmin] = useState<AdminListItem | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['admins'],
@@ -34,6 +52,11 @@ export default function AdminsPage() {
   });
 
   const admins: AdminListItem[] = data?.data ?? [];
+
+  const activeAdminsCount = useMemo(
+    () => admins.filter((admin) => admin.status === 'ACTIVE').length,
+    [admins],
+  );
 
   const createMutation = useMutation({
     mutationFn: (payload: { email: string; password: string }) =>
@@ -86,6 +109,50 @@ export default function AdminsPage() {
     }
   };
 
+  const handleBackendError = (err: unknown, defaultMessage: string) => {
+    const error = err as any;
+    if (error && typeof error === 'object' && 'code' in error) {
+      if (error.code === 'LAST_ADMIN_CANNOT_BE_DELETED') {
+        toast.error('Cannot delete the last active admin. Create another admin first.');
+        return;
+      }
+      if (error.code === 'LAST_ADMIN_CANNOT_BE_DEACTIVATED') {
+        toast.error('Cannot deactivate the last active admin. Create another admin first.');
+        return;
+      }
+    }
+
+    const message =
+      typeof error === 'string'
+        ? error
+        : (error && typeof error.message === 'string' && error.message) || defaultMessage;
+    toast.error(message);
+  };
+
+  const deactivateMutation = useMutation({
+    mutationFn: (id: string) => repository.deactivateAdmin(id),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['admins'] });
+      setDeactivatingAdmin(null);
+      toast.success(result?.message || 'Admin deactivated successfully');
+    },
+    onError: (err) => {
+      handleBackendError(err, 'Failed to deactivate admin');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => repository.deleteAdmin(id),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['admins'] });
+      setDeletingAdmin(null);
+      toast.success(result?.message || 'Admin deleted successfully');
+    },
+    onError: (err) => {
+      handleBackendError(err, 'Failed to delete admin');
+    },
+  });
+
   const columns: DataTableColumn<AdminListItem>[] = [
     {
       id: 'email',
@@ -98,19 +165,30 @@ export default function AdminsPage() {
     {
       id: 'status',
       header: 'Status',
-      cell: (row) => (
-        <span
-          className={cn(
-            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-            row.status === 'ACTIVE'
-              ? 'bg-emerald-50 text-emerald-700'
-              : 'bg-slate-100 text-slate-600'
-          )}
-        >
-          {row.status}
-        </span>
-      ),
-      width: 100,
+      cell: (row) => {
+        const status = row.status;
+        const isActive = status === 'ACTIVE';
+        const isSuspended = status === 'SUSPENDED';
+        const isPendingDeletion = status === 'PENDING_DELETION';
+
+        const classes = cn(
+          'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+          isActive && 'bg-emerald-50 text-emerald-700',
+          isSuspended && 'bg-amber-50 text-amber-700',
+          isPendingDeletion && 'bg-red-50 text-red-700',
+          !isActive && !isSuspended && !isPendingDeletion && 'bg-slate-100 text-slate-600',
+        );
+
+        const label =
+          status === 'PENDING_DELETION'
+            ? 'Pending deletion'
+            : status === 'SUSPENDED'
+              ? 'Suspended'
+              : status;
+
+        return <span className={classes}>{label}</span>;
+      },
+      width: 140,
     },
     {
       id: 'createdAt',
@@ -139,6 +217,60 @@ export default function AdminsPage() {
             })
           : '—',
       width: 180,
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: (row) => {
+        const isActive = row.status === 'ACTIVE';
+        const isDeleted = row.status === 'DELETED';
+        const isPendingDeletion = row.status === 'PENDING_DELETION';
+        const isOnlyActiveAdmin = isActive && activeAdminsCount <= 1;
+
+        const canDeactivate = isActive;
+        const canDelete = !isDeleted && !isPendingDeletion;
+
+        if (!canDeactivate && !canDelete) {
+          return (
+            <span className="text-xs text-muted-foreground">
+              No actions
+            </span>
+          );
+        }
+
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {canDeactivate && (
+                <DropdownMenuItem
+                  onClick={() => setDeactivatingAdmin(row)}
+                  disabled={deactivateMutation.isPending || isOnlyActiveAdmin}
+                >
+                  <Ban className="mr-2 h-4 w-4" />
+                  {isOnlyActiveAdmin ? 'Cannot deactivate last admin' : 'Deactivate admin'}
+                </DropdownMenuItem>
+              )}
+              {canDelete && (
+                <DropdownMenuItem
+                  onClick={() => setDeletingAdmin(row)}
+                  disabled={deleteMutation.isPending || isOnlyActiveAdmin}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {isOnlyActiveAdmin ? 'Cannot delete last admin' : 'Delete admin'}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+      width: 120,
     },
   ];
 
@@ -220,6 +352,112 @@ export default function AdminsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={!!deactivatingAdmin}
+        onOpenChange={(open) => {
+          if (!open && !deactivateMutation.isPending) {
+            setDeactivatingAdmin(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate admin?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deactivatingAdmin
+                ? `This will suspend ${deactivatingAdmin.email}, log them out, and block further logins. You can keep their data without deleting the account.`
+                : 'This will suspend the selected admin and block further logins.'}
+              {activeAdminsCount <= 1 && deactivatingAdmin?.status === 'ACTIVE' && (
+                <span className="mt-2 block font-medium text-destructive">
+                  You must keep at least one active admin. Create another admin before deactivating this one.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deactivateMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={
+                deactivateMutation.isPending ||
+                !deactivatingAdmin ||
+                (activeAdminsCount <= 1 && deactivatingAdmin.status === 'ACTIVE')
+              }
+              onClick={() => {
+                if (deactivatingAdmin) {
+                  deactivateMutation.mutate(deactivatingAdmin.id);
+                }
+              }}
+            >
+              {deactivateMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deactivating...
+                </>
+              ) : (
+                'Deactivate'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!deletingAdmin}
+        onOpenChange={(open) => {
+          if (!open && !deleteMutation.isPending) {
+            setDeletingAdmin(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete admin?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingAdmin
+                ? `This will permanently remove ${deletingAdmin.email}'s admin access. Financial/audit logs remain, but the admin account itself is deleted.`
+                : 'This will permanently remove the selected admin account.'}
+              <span className="mt-2 block">
+                This action cannot be undone. Consider deactivating instead if you only want to temporarily block access.
+              </span>
+              {activeAdminsCount <= 1 && deletingAdmin?.status === 'ACTIVE' && (
+                <span className="mt-2 block font-medium text-destructive">
+                  You must keep at least one active admin. Create another admin before deleting this one.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={
+                deleteMutation.isPending ||
+                !deletingAdmin ||
+                (activeAdminsCount <= 1 && deletingAdmin.status === 'ACTIVE')
+              }
+              onClick={() => {
+                if (deletingAdmin) {
+                  deleteMutation.mutate(deletingAdmin.id);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       </div>
     </PageLayout>
   );
