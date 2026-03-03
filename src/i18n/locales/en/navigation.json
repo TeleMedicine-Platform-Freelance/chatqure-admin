@@ -213,12 +213,6 @@
     "dark": "Dark",
     "system": "System"
   },
-  "announcement": {
-    "title": "Introducing AI Services",
-    "desc": "Learn how leading industries are using AI.",
-    "cta": "Watch 1 min demo",
-    "dismiss": "Dismiss"
-  },
   "descriptions": {
     "showcase-tables": "Advanced data tables with sorting, filtering, pagination, and inline editing",
     "showcase-forms": "Production-ready form patterns with validation, multi-step flows, and dynamic fields",

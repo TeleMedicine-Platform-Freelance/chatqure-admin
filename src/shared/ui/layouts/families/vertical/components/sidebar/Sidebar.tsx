@@ -9,7 +9,6 @@ import { SidebarItem } from './SidebarItem';
 import { SidebarCollapsible } from './SidebarCollapsible';
 import { SidebarToggle } from './SidebarToggle';
 import { Branding } from '../../../../components/Branding';
-import AnnouncementCard from '@/shared/ui/layouts/components/AnnouncementCard';
 import SidebarThemeToggler from '@/shared/ui/layouts/components/SidebarThemeToggler';
 
 import { useLayout } from '../../../../app';
@@ -53,7 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const footerSlot = explicitFooterSlot || (
     <div className="space-y-4">
-       {!collapsed && settings.footerWidget === 'default' && <AnnouncementCard />}
+       {!collapsed && settings.footerWidget === 'default' }
        {settings.showUsage && (
           <UsageProgressWidget 
             value={1.2} 
