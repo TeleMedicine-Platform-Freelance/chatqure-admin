@@ -1,13 +1,13 @@
 import z from "zod";
 
 const EnvSchema = z.object({
-  VITE_APP_NAME: z.string().default('Katalyst Admin'),
+  VITE_APP_NAME: z.string().default('Chatqure Admin Panel'),
   VITE_APP_ENVIRONMENT: z.string().default('development'),
   VITE_API_BASE_URL: z.string().default('http://localhost:3000'),
   VITE_API_TIMEOUT: z.string().default('30000'),
   VITE_AUTH_LOGIN_PATH: z.string().default('/auth/login'),
-  VITE_AUTH_TOKEN_KEY: z.string().default('katalyst_auth_token'),
-  VITE_AUTH_CURRENT_USER_KEY: z.string().default('katalyst_auth_current_user'),
+  VITE_AUTH_TOKEN_KEY: z.string().default('chatqure_admin_auth_token'),
+  VITE_AUTH_CURRENT_USER_KEY: z.string().default('chatqure_admin_current_user'),
   VITE_USE_MSW: z.string().default('false'),
   VITE_ENABLE_PUBLIC_CODE_EXAMPLES: z.string().default('false'),
   VITE_SIDEBAR_DEFAULT_WIDTH: z.string().default('288'),

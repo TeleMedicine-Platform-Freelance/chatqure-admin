@@ -1,5 +1,5 @@
 {
-  "brand": "Katalyst",
+  "brand": "Chatqure Admin",
   "ariaMainNav": "Navegación principal",
   "expand": "Expandir barra lateral",
   "collapse": "Contraer barra lateral",
@@ -31,6 +31,7 @@
     "kanban": "Kanban / Tareas",
     "invoices": "Facturas",
     "users": "Usuarios",
+    "admins": "Admins",
     "doctor": "Médicos",
     "patient": "Pacientes",
     "bookings": "Reservas",
@@ -40,6 +41,8 @@
     "symptoms": "Síntomas",
     "symptom-categories": "Categorías de Síntomas",
     "languages": "Idiomas",
+    "transactions": "Transacciones",
+    "medical-conditions": "Condiciones Médicas",
     "medical-council": "Consejo Médico",
     "integrations": "Aplicaciones",
     "teams": "Equipos",

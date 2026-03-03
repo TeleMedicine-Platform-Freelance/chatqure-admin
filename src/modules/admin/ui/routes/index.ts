@@ -20,7 +20,6 @@ const LanguagesPage = lazy(() => import('../pages/LanguagesPage'));
 const MedicalConditionsPage = lazy(() => import('../pages/MedicalConditionsPage'));
 const MedicalCouncilPage = lazy(() => import('../pages/MedicalCouncilPage'));
 const MedicalApproachesPage = lazy(() => import('../pages/MedicalApproachesPage'));
-const AddTestMoneyPage = lazy(() => import('../pages/AddTestMoneyPage'));
 
 export const ADMIN_ROUTES: ModuleRoute[] = [
   {
@@ -148,13 +147,6 @@ export const ADMIN_ROUTES: ModuleRoute[] = [
     layout: 'app',
     title: 'Medical Approaches',
     component: MedicalApproachesPage,
-  },
-  {
-    path: ADMIN_PATHS.ADD_TEST_MONEY,
-    module: 'admin',
-    layout: 'app',
-    title: 'Add Test Money',
-    component: AddTestMoneyPage,
   },
 ];
 

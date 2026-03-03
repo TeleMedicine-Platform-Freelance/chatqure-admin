@@ -180,7 +180,6 @@ export const navigationSections: NavGroup[] = [
       { id: 'medical-conditions', icon: 'alert-triangle', to: '/admin/medical-conditions', navRole: 'secondary' },
       { id: 'medical-council', icon: 'shield-check', to: '/admin/medical-council', navRole: 'secondary' },
       { id: 'medical-approaches', icon: 'sparkles', to: '/admin/medical-approaches', navRole: 'secondary' },
-      { id: 'add-test-money', icon: 'zap', to: '/admin/dev/add-test-money', navRole: 'secondary' },
     ],
   },
   /* ───────── Home ───────── */
@@ -193,22 +192,7 @@ export const navigationSections: NavGroup[] = [
   //   ],
   // },
 
-  /* ───────── Pages ───────── */
-  {
-    id: 'pages',
-    items: [
-      { id: 'pricing', icon: 'file-text', to: '/pages/pricing', navRole: 'secondary' },
-      {
-        id: 'errorPages',
-        icon: 'alert-triangle',
-        navRole: 'secondary',
-        children: [
-          { id: '404', to: '/pages/errors/404' },
-          { id: '500', to: '/pages/errors/500' },
-        ],
-      },
-    ],
-  },
+  // Template demo sections (Pages/System) removed for Chatqure Admin Panel.
 
   /* ───────── Authentication (FULL) ───────── */
   // {
@@ -250,13 +234,5 @@ export const navigationSections: NavGroup[] = [
   //   ],
   // },
 
-  /* ───────── System ───────── */
-  {
-    id: 'system',
-    items: [
-      { id: 'docs', icon: 'book-open', to: 'https://docs.5studios.net/katalyst', target: '_blank', navRole: 'utility' },
-      { id: 'changelog', icon: 'git-commit', to: '/system/changelog', navRole: 'utility' },
-      { id: 'layout-builder', icon: 'palette', to: '/playground/layout-builder', navRole: 'utility' },
-    ],
-  },
+  // (system section removed)
 ];

@@ -1,6 +1,5 @@
 import React from 'react';
 import { cn } from '@/shadcn/lib/utils';
-import LanguageMenu from '@/shared/ui/layouts/components/topbar/LanguageMenu';
 import LayoutAppearanceMenu from '@/shared/ui/layouts/components/topbar/LayoutAppearanceMenu';
 import AvatarMenu from '@/shared/ui/layouts/components/topbar/AvatarMenu';
 
@@ -17,7 +16,6 @@ export const UtilityOptions: React.FC<UtilityOptionsProps> = ({ className }) => 
   return (
     <div className={cn('flex items-center gap-2', className)}>
       <LayoutAppearanceMenu />
-      <LanguageMenu />
       <AvatarMenu />
     </div>
   );

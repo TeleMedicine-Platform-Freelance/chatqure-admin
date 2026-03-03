@@ -188,9 +188,6 @@ export interface IAdminRepository {
   
   verifyPaymentOrder(orderId: string): Promise<any>;
   
-  // Dev utilities
-  addTestMoney(params: { accountId: string; amount: number }): Promise<void>;
-  
   // Specializations
   getSpecializations(): Promise<any[]>;
   createSpecialization(data: { name: string; iconUrl?: string }): Promise<any>;

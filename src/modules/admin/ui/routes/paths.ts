@@ -10,7 +10,6 @@ export const ADMIN_PATHS = {
   PAYOUTS: '/admin/payouts',
   PAYMENTS: '/admin/payments',
   TRANSACTIONS: '/admin/transactions',
-  ADD_TEST_MONEY: '/admin/dev/add-test-money',
   SPECIALIZATIONS: '/admin/specializations',
   SYMPTOMS: '/admin/symptoms',
   SYMPTOM_CATEGORIES: '/admin/symptom-categories',

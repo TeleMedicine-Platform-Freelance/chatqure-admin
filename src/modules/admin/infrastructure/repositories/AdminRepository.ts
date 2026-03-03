@@ -387,18 +387,6 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     return this.post<any>(`/api/v1/admin/payments/verify-order/${orderId}`, {}, 'Failed to verify payment order');
   }
 
-  // Dev utilities
-  async addTestMoney(params: { accountId: string; amount: number }): Promise<void> {
-    await this.post<void>(
-      '/api/v1/admin/dev/add-test-money',
-      {
-        accountId: params.accountId,
-        amount: params.amount,
-      },
-      'Failed to add test money'
-    );
-  }
-
   // Reference data base path (backend: AdminReferenceDataController)
   private static readonly REFERENCE_DATA = '/api/v1/admin/reference-data';
 

@@ -23,6 +23,7 @@ import ErrorBoundary from '@/app/providers/ErrorBoundary';
 import type { ModuleRoute } from '@/core/router/types';
 import { NAVIGATION_PATHS } from '@/core/router/paths';
 import Error404Page from '@/modules/pages/errors/ui/pages/Error404Page';
+import Error500Page from '@/modules/pages/errors/ui/pages/Error500Page';
 import { RouteTracker } from './RouteTracker';
 
 // Loading fallback with skeleton
@@ -130,7 +131,7 @@ const AppRouter: React.FC = () => {
 
             {/* Auth routes - AuthLayout wrapper with error boundary */}
             <Route element={
-              <ErrorBoundary name="Auth">
+              <ErrorBoundary name="Auth" fallback={<Error500Page />}>
                 <AuthLayout />
               </ErrorBoundary>
             }>
@@ -139,15 +140,15 @@ const AppRouter: React.FC = () => {
 
             {/* Protected routes - ProtectedRoute guard + AppLayout wrapper with error boundary */}
             <Route element={
-              <ErrorBoundary name="App">
+              <ErrorBoundary name="App" fallback={<Error500Page />}>
                 <ProtectedRoute>
                   <AppLayout />
                 </ProtectedRoute>
               </ErrorBoundary>
             }>
               {renderRoutes(appRoutes)}
-              {/* Fallback: unmatched app paths (e.g. /admin/unknown) redirect to dashboard instead of blank content */}
-              <Route path="*" element={<Navigate to="/admin" replace />} />
+              {/* Fallback: unmatched app paths (e.g. /admin/unknown) show 404 error page */}
+              <Route path="*" element={<NotFoundPage />} />
             </Route>
 
             {/* Static error routes */}

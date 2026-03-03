@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/shadcn/lib/utils';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/chatqure-logo.svg';
 import { useLayout } from '@/shared/ui/layouts/app';
 import { useTranslation } from 'react-i18next';
 
@@ -20,7 +20,7 @@ export const Branding: React.FC<BrandingProps> = ({ className }) => {
   return (
     <div className={cn('flex items-center gap-2', collapsed && 'justify-center', className)}>
 
-      <img src={logo} alt={t('brand')} className="size-8 rounded-full" />
+      <img src={logo} alt={t('brand')} className="size-8" />
 
       {!collapsed && (
         <span className="font-semibold tracking-tight text-lg whitespace-nowrap">{t('brand')}</span>
