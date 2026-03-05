@@ -55,6 +55,14 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     );
   }
 
+  async enrichGeoIp(): Promise<{ processed: number; enriched: number }> {
+    return this.post<{ processed: number; enriched: number }, void>(
+      '/api/v1/admin/analytics/enrich-geoip',
+      undefined,
+      'Failed to run GeoIP enrichment'
+    );
+  }
+
   async getAdmins(): Promise<{ data: AdminListItem[] }> {
     return this.get<{ data: AdminListItem[] }>(
       '/api/v1/admin/auth/admins',

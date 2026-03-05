@@ -75,6 +75,8 @@ export interface IAdminRepository {
     to?: string;
   }): Promise<AdminDashboardMetrics>;
 
+  enrichGeoIp(): Promise<{ processed: number; enriched: number }>;
+
   getAdmins(): Promise<{ data: AdminListItem[] }>;
   createAdmin(data: { email: string; password: string }): Promise<{ id: string; email: string; message: string }>;
   deleteAdmin(id: string): Promise<{ message: string }>;

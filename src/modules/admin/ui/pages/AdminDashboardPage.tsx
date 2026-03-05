@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useService } from '@/app/providers/useDI';
 import { ADMIN_SYMBOLS } from '../../di/symbols';
 import type {
@@ -34,6 +34,8 @@ import {
   Building2,
   Truck,
 } from 'lucide-react';
+import { Button } from '@/shadcn/components/ui/button';
+import { toast } from 'sonner';
 
 const METRICS_RANGE_OPTIONS: { value: AdminDashboardMetricsRange; label: string }[] = [
   { value: 'all_time', label: 'All time' },
@@ -52,6 +54,7 @@ function isValidCustomRange(from: string, to: string): boolean {
 
 export default function AdminDashboardPage() {
   const repository = useService<IAdminRepository>(ADMIN_SYMBOLS.IAdminRepository);
+  const queryClient = useQueryClient();
   const [metricsRange, setMetricsRange] = useState<AdminDashboardMetricsRange>('all_time');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
@@ -97,6 +100,28 @@ export default function AdminDashboardPage() {
     ],
     queryFn: () => repository.getDashboardMetrics(metricsParams),
     enabled: (metricsRange !== 'custom' || isCustomWithDates) && !customRangeInvalid,
+  });
+
+  const geoIpMutation = useMutation({
+    mutationFn: () => repository.enrichGeoIp(),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'analytics', 'overview'] });
+      const { processed, enriched } = result;
+      if (!processed) {
+        toast.info('GeoIP enrichment: no pending consultations to update.');
+      } else if (!enriched) {
+        toast.info(`GeoIP enrichment inspected ${processed} consultations, none needed updates.`);
+      } else {
+        toast.success(
+          `GeoIP enrichment updated ${enriched} of ${processed} consultations this run.`,
+        );
+      }
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : 'Failed to run GeoIP enrichment. Please try again.';
+      toast.error(message);
+    },
   });
 
   const isLoading = analyticsLoading || metricsLoading;
@@ -150,7 +175,18 @@ export default function AdminDashboardPage() {
 
       {/* Analytics section */}
       <section className="space-y-4">
-        <h2 className="text-lg font-medium">Analytics</h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-lg font-medium">Analytics</h2>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => geoIpMutation.mutate()}
+            disabled={geoIpMutation.isPending}
+          >
+            {geoIpMutation.isPending ? 'Running GeoIP enrichment...' : 'Run GeoIP enrichment'}
+          </Button>
+        </div>
         {hasAnalyticsError ? (
           <Card className="border-destructive">
             <CardContent className="p-6">
