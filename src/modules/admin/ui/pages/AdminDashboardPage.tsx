@@ -6,6 +6,7 @@ import type {
   AdminAnalyticsOverview,
   AdminDashboardMetrics,
   AdminDashboardMetricsRange,
+  AdminCommissionByStateResponse,
   IAdminRepository,
 } from '../../domain/ports/IAdminRepository';
 import { Card, CardContent } from '@/shared/ui/shadcn/components/ui/card';
@@ -102,6 +103,23 @@ export default function AdminDashboardPage() {
     enabled: (metricsRange !== 'custom' || isCustomWithDates) && !customRangeInvalid,
   });
 
+  const {
+    data: commissionByState,
+    isLoading: commissionByStateLoading,
+    isError: commissionByStateError,
+    error: commissionByStateErr,
+  } = useQuery<AdminCommissionByStateResponse>({
+    queryKey: [
+      'admin',
+      'dashboard',
+      'commission-by-state',
+      metricsRange,
+      ...(metricsRange === 'custom' ? [customFrom, customTo] : []),
+    ],
+    queryFn: () => repository.getCommissionByState(metricsParams),
+    enabled: (metricsRange !== 'custom' || isCustomWithDates) && !customRangeInvalid,
+  });
+
   const geoIpMutation = useMutation({
     mutationFn: () => repository.enrichGeoIp(),
     onSuccess: (result) => {
@@ -164,6 +182,7 @@ export default function AdminDashboardPage() {
 
   const hasAnalyticsError = analyticsError || !overview;
   const hasMetricsError = metricsError || !metrics;
+  const hasCommissionByStateError = commissionByStateError || !commissionByState;
   const showMetricsData =
     !hasMetricsError &&
     Boolean(metrics) &&
@@ -370,6 +389,71 @@ export default function AdminDashboardPage() {
             ))}
           </div>
         ) : null}
+
+        {/* Commission by state */}
+        <div className="pt-2">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <h3 className="text-sm font-medium text-muted-foreground">
+              Commission by State
+            </h3>
+          </div>
+
+          {hasCommissionByStateError ? (
+            <Card className="border-destructive">
+              <CardContent className="p-4">
+                <p className="text-destructive text-sm">
+                  {commissionByStateErr instanceof Error
+                    ? commissionByStateErr.message
+                    : 'Failed to load commission by state.'}
+                </p>
+              </CardContent>
+            </Card>
+          ) : commissionByStateLoading && !commissionByState ? (
+            <Card className="animate-pulse">
+              <CardContent className="p-4">
+                <div className="h-4 w-40 bg-muted rounded mb-2" />
+                <div className="h-4 w-24 bg-muted rounded" />
+              </CardContent>
+            </Card>
+          ) : commissionByState?.data?.length ? (
+            <Card>
+              <CardContent className="p-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Top states</p>
+                    <div className="space-y-2">
+                      {commissionByState.data.slice(0, 8).map((row) => (
+                        <div
+                          key={row.state}
+                          className="flex items-center justify-between text-sm"
+                        >
+                          <span className="text-muted-foreground">{row.state}</span>
+                          <span className="font-medium">₹{row.totalCommission}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Notes</p>
+                    <p className="text-sm text-muted-foreground">
+                      Uses consultation snapshot <code>metadata.patientState</code>.
+                      If state is missing, it is grouped under <strong>Unknown</strong>.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-muted">
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground">
+                  No commission-by-state data yet. Run GeoIP enrichment to populate states for settled consultations.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </section>
     </div>
   );

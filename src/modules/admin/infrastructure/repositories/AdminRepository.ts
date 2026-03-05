@@ -12,6 +12,7 @@ import type {
   AdminDashboardMetrics,
   AdminListItem,
   AdminDashboardMetricsRange,
+  AdminCommissionByStateResponse,
 } from '../../domain/ports/IAdminRepository';
 import type { DoctorDetails, DoctorListResponse } from '../../domain/models/Doctor';
 import type { PatientDetails, PatientListResponse } from '../../domain/models/Patient';
@@ -56,10 +57,26 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
   }
 
   async enrichGeoIp(): Promise<{ processed: number; enriched: number }> {
-    return this.post<{ processed: number; enriched: number }, void>(
+    return this.post<{ processed: number; enriched: number }>(
       '/api/v1/admin/analytics/enrich-geoip',
-      undefined,
+      {},
       'Failed to run GeoIP enrichment'
+    );
+  }
+
+  async getCommissionByState(params?: {
+    range?: AdminDashboardMetricsRange;
+    from?: string;
+    to?: string;
+  }): Promise<AdminCommissionByStateResponse> {
+    const query = this.buildQueryString({
+      range: params?.range,
+      from: params?.from,
+      to: params?.to,
+    });
+    return this.get<AdminCommissionByStateResponse>(
+      this.appendQuery('/api/v1/admin/dashboard/commission-by-state', query),
+      'Failed to fetch commission by state'
     );
   }
 

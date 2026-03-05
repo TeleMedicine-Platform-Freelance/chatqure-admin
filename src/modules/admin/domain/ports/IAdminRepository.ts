@@ -42,6 +42,19 @@ export interface AdminDashboardMetrics {
   };
 }
 
+export interface AdminCommissionByStateItem {
+  state: string;
+  totalCommission: string;
+}
+
+export interface AdminCommissionByStateResponse {
+  range: {
+    from?: string | null;
+    to?: string | null;
+  };
+  data: AdminCommissionByStateItem[];
+}
+
 /** Admin user (from GET /api/v1/admin/auth/admins) */
 export interface AdminListItem {
   id: string;
@@ -76,6 +89,12 @@ export interface IAdminRepository {
   }): Promise<AdminDashboardMetrics>;
 
   enrichGeoIp(): Promise<{ processed: number; enriched: number }>;
+
+  getCommissionByState(params?: {
+    range?: AdminDashboardMetricsRange;
+    from?: string;
+    to?: string;
+  }): Promise<AdminCommissionByStateResponse>;
 
   getAdmins(): Promise<{ data: AdminListItem[] }>;
   createAdmin(data: { email: string; password: string }): Promise<{ id: string; email: string; message: string }>;
