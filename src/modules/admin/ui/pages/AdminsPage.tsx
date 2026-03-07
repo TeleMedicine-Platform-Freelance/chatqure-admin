@@ -30,7 +30,8 @@ import {
   DropdownMenuTrigger,
 } from '@/shadcn/components/ui/dropdown-menu';
 import FieldText from '@/shared/ui/components/forms/composites/field/FieldText';
-import { Plus, Check, Loader2, MoreHorizontal, Ban, Trash2 } from 'lucide-react';
+import { Input } from '@/shared/ui/shadcn/components/ui/input';
+import { Plus, Check, Loader2, MoreHorizontal, Ban, Trash2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/shadcn/lib/utils';
 
@@ -40,7 +41,10 @@ export default function AdminsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [deactivatingAdmin, setDeactivatingAdmin] = useState<AdminListItem | null>(null);
@@ -57,6 +61,29 @@ export default function AdminsPage() {
     () => admins.filter((admin) => admin.status === 'ACTIVE').length,
     [admins],
   );
+
+  const passwordMismatch = useMemo(
+    () => confirmPassword.length > 0 && password !== confirmPassword,
+    [confirmPassword, password]
+  );
+
+  const canSubmitCreate = useMemo(() => {
+    const hasEmail = email.trim().length > 0;
+    const hasMinPassword = password.length >= 8;
+    const hasConfirm = confirmPassword.length > 0;
+    const passwordsMatch = !passwordMismatch;
+    return hasEmail && hasMinPassword && hasConfirm && passwordsMatch && !isSaving;
+  }, [confirmPassword.length, email, isSaving, password.length, passwordMismatch]);
+
+  const createDisabledReason = useMemo(() => {
+    if (isSaving) return 'Creating admin...';
+    if (email.trim().length === 0) return 'Enter admin email to continue.';
+    if (password.length === 0) return 'Enter a password to continue.';
+    if (password.length < 8) return 'Password must be at least 8 characters.';
+    if (confirmPassword.length === 0) return 'Confirm password to continue.';
+    if (passwordMismatch) return 'Password and confirm password must match.';
+    return null;
+  }, [confirmPassword.length, email, isSaving, password.length, passwordMismatch]);
 
   const createMutation = useMutation({
     mutationFn: (payload: { email: string; password: string }) =>
@@ -80,7 +107,10 @@ export default function AdminsPage() {
   const resetForm = () => {
     setEmail('');
     setPassword('');
+    setConfirmPassword('');
     setError('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setIsSaving(false);
     setIsSuccess(false);
   };
@@ -98,6 +128,14 @@ export default function AdminsPage() {
     }
     if (!password || password.length < 8) {
       setError('Password must be at least 8 characters');
+      return;
+    }
+    if (!confirmPassword) {
+      setError('Please confirm the password');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Password and confirm password do not match');
       return;
     }
     setIsSaving(true);
@@ -138,6 +176,17 @@ export default function AdminsPage() {
     },
     onError: (err) => {
       handleBackendError(err, 'Failed to deactivate admin');
+    },
+  });
+
+  const reactivateMutation = useMutation({
+    mutationFn: (id: string) => repository.reactivateAdmin(id),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['admins'] });
+      toast.success(result?.message || 'Admin reactivated successfully');
+    },
+    onError: (err) => {
+      handleBackendError(err, 'Failed to reactivate admin');
     },
   });
 
@@ -223,14 +272,16 @@ export default function AdminsPage() {
       header: 'Actions',
       cell: (row) => {
         const isActive = row.status === 'ACTIVE';
+        const isSuspended = row.status === 'SUSPENDED';
         const isDeleted = row.status === 'DELETED';
         const isPendingDeletion = row.status === 'PENDING_DELETION';
         const isOnlyActiveAdmin = isActive && activeAdminsCount <= 1;
 
         const canDeactivate = isActive;
+        const canReactivate = isSuspended;
         const canDelete = !isDeleted && !isPendingDeletion;
 
-        if (!canDeactivate && !canDelete) {
+        if (!canDeactivate && !canReactivate && !canDelete) {
           return (
             <span className="text-xs text-muted-foreground">
               No actions
@@ -247,6 +298,15 @@ export default function AdminsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {canReactivate && (
+                <DropdownMenuItem
+                  onClick={() => reactivateMutation.mutate(row.id)}
+                  disabled={reactivateMutation.isPending}
+                >
+                  <Check className="mr-2 h-4 w-4" />
+                  Reactivate admin
+                </DropdownMenuItem>
+              )}
               {canDeactivate && (
                 <DropdownMenuItem
                   onClick={() => setDeactivatingAdmin(row)}
@@ -324,23 +384,67 @@ export default function AdminsPage() {
               statusMessage={error}
               required
             />
-            <FieldText
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setError('');
-              }}
-              placeholder="Min 8 characters"
-              status={error ? 'error' : 'default'}
-              required
-            />
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Password</label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError('');
+                  }}
+                  placeholder="Min 8 characters"
+                  className={cn('pr-10', error ? 'border-destructive' : '')}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Confirm Password</label>
+              <div className="relative">
+                <Input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setError('');
+                  }}
+                  placeholder="Re-enter password"
+                  className={cn('pr-10', error ? 'border-destructive' : '')}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {passwordMismatch ? (
+                <p className="text-sm text-destructive">Password and confirm password do not match</p>
+              ) : error ? (
+                <p className="text-sm text-destructive">{error}</p>
+              ) : null}
+            </div>
             <DialogFooter>
+              {!canSubmitCreate && createDisabledReason ? (
+                <p className="mr-auto text-xs text-muted-foreground">{createDisabledReason}</p>
+              ) : null}
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSaving}>
+              <Button type="submit" disabled={!canSubmitCreate}>
                 {isSuccess ? (
                   <Check className="mr-2 h-4 w-4" />
                 ) : isSaving ? (

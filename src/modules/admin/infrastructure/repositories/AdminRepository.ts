@@ -110,6 +110,14 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     );
   }
 
+  async reactivateAdmin(id: string): Promise<{ message: string }> {
+    return this.post<{ message: string }>(
+      `/api/v1/admin/auth/admins/${id}/active`,
+      {},
+      'Failed to reactivate admin'
+    );
+  }
+
   async getDoctors(params?: {
     page?: number;
     pageSize?: number;

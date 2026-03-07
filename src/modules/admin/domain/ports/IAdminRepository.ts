@@ -100,6 +100,7 @@ export interface IAdminRepository {
   createAdmin(data: { email: string; password: string }): Promise<{ id: string; email: string; message: string }>;
   deleteAdmin(id: string): Promise<{ message: string }>;
   deactivateAdmin(id: string): Promise<{ message: string }>;
+  reactivateAdmin(id: string): Promise<{ message: string }>;
 
   getDoctors(params?: {
     page?: number;

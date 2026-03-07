@@ -36,12 +36,33 @@ interface AttachmentMetadata {
   fileName?: string;
 }
 
+interface ReplyMetadata {
+  replyToText?: string;
+  replyToSenderRole?: 'PATIENT' | 'DOCTOR' | 'ADMIN';
+}
+
 function getAttachmentMetadata(msg: ConsultationMessage): AttachmentMetadata | null {
   if (!msg.metadata || typeof msg.metadata !== 'object') return null;
   const meta = msg.metadata as Record<string, unknown>;
   return {
     fileUrl: typeof meta.fileUrl === 'string' ? meta.fileUrl : undefined,
     fileName: typeof meta.fileName === 'string' ? meta.fileName : undefined,
+  };
+}
+
+function getReplyMetadata(msg: ConsultationMessage): ReplyMetadata | null {
+  if (!msg.metadata || typeof msg.metadata !== 'object') return null;
+  const meta = msg.metadata as Record<string, unknown>;
+  const replyToSenderRole =
+    meta.replyToSenderRole === 'PATIENT' ||
+    meta.replyToSenderRole === 'DOCTOR' ||
+    meta.replyToSenderRole === 'ADMIN'
+      ? (meta.replyToSenderRole as 'PATIENT' | 'DOCTOR' | 'ADMIN')
+      : undefined;
+
+  return {
+    replyToText: typeof meta.replyToText === 'string' ? meta.replyToText : undefined,
+    replyToSenderRole,
   };
 }
 
@@ -57,6 +78,13 @@ function MessageBubble({
   const isPatient = msg.senderRole === 'PATIENT';
   const isAttachment = msg.messageType === 'ATTACHMENT';
   const attachment = getAttachmentMetadata(msg);
+  const reply = getReplyMetadata(msg);
+  const replySenderLabel =
+    reply?.replyToSenderRole === 'DOCTOR'
+      ? 'Doctor'
+      : reply?.replyToSenderRole === 'ADMIN'
+        ? 'Admin'
+        : 'Patient';
   return (
     <div
       className={cn(
@@ -69,6 +97,19 @@ function MessageBubble({
       <span className="text-xs font-medium opacity-90">
         {msg.senderRole === 'PATIENT' ? 'Patient' : msg.senderRole === 'DOCTOR' ? 'Doctor' : 'Admin'}
       </span>
+      {reply?.replyToText ? (
+        <div
+          className={cn(
+            'rounded-md border-l-2 px-2 py-1 text-xs mb-1',
+            isPatient
+              ? 'bg-background/70 border-primary/50 text-foreground/85'
+              : 'bg-primary-foreground/15 border-primary-foreground/70 text-primary-foreground'
+          )}
+        >
+          <p className="font-medium opacity-90">Replying to {replySenderLabel}</p>
+          <p className="truncate opacity-90">{reply.replyToText}</p>
+        </div>
+      ) : null}
       {isAttachment && attachment?.fileUrl ? (
         <button
           type="button"
