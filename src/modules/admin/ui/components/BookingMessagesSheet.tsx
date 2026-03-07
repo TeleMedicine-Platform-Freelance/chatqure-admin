@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useService } from '@/app/providers/useDI';
 import { ADMIN_SYMBOLS } from '../../di/symbols';
@@ -10,8 +11,8 @@ import {
   SheetTitle,
 } from '@/shared/ui/shadcn/components/ui/sheet';
 import { Badge } from '@/shared/ui/shadcn/components/ui/badge';
-import { ScrollArea } from '@/shared/ui/shadcn/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/shadcn/lib/utils';
 
 export interface BookingForMessages {
@@ -30,8 +31,32 @@ interface BookingMessagesSheetProps {
   booking: BookingForMessages | null;
 }
 
-function MessageBubble({ msg }: { msg: ConsultationMessage }) {
+interface AttachmentMetadata {
+  fileUrl?: string;
+  fileName?: string;
+}
+
+function getAttachmentMetadata(msg: ConsultationMessage): AttachmentMetadata | null {
+  if (!msg.metadata || typeof msg.metadata !== 'object') return null;
+  const meta = msg.metadata as Record<string, unknown>;
+  return {
+    fileUrl: typeof meta.fileUrl === 'string' ? meta.fileUrl : undefined,
+    fileName: typeof meta.fileName === 'string' ? meta.fileName : undefined,
+  };
+}
+
+function MessageBubble({
+  msg,
+  onOpenAttachment,
+  isOpeningAttachment,
+}: {
+  msg: ConsultationMessage;
+  onOpenAttachment: (msg: ConsultationMessage) => void;
+  isOpeningAttachment: boolean;
+}) {
   const isPatient = msg.senderRole === 'PATIENT';
+  const isAttachment = msg.messageType === 'ATTACHMENT';
+  const attachment = getAttachmentMetadata(msg);
   return (
     <div
       className={cn(
@@ -44,7 +69,20 @@ function MessageBubble({ msg }: { msg: ConsultationMessage }) {
       <span className="text-xs font-medium opacity-90">
         {msg.senderRole === 'PATIENT' ? 'Patient' : msg.senderRole === 'DOCTOR' ? 'Doctor' : 'Admin'}
       </span>
-      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+      {isAttachment && attachment?.fileUrl ? (
+        <button
+          type="button"
+          onClick={() => onOpenAttachment(msg)}
+          disabled={isOpeningAttachment}
+          className="text-left text-sm underline underline-offset-4 break-all disabled:opacity-70"
+        >
+          {isOpeningAttachment
+            ? 'Opening attachment...'
+            : attachment.fileName || msg.content || 'Open attachment'}
+        </button>
+      ) : (
+        <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+      )}
       <span className="text-xs opacity-75">
         {new Date(msg.createdAt).toLocaleString('en-GB', {
           day: '2-digit',
@@ -64,6 +102,7 @@ export function BookingMessagesSheet({
   booking,
 }: BookingMessagesSheetProps) {
   const repository = useService<IAdminRepository>(ADMIN_SYMBOLS.IAdminRepository);
+  const [openingAttachmentId, setOpeningAttachmentId] = useState<string | null>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['consultation-messages', booking?.id],
@@ -78,6 +117,27 @@ export function BookingMessagesSheet({
 
   const messages = data?.data ?? [];
   const total = data?.total ?? 0;
+
+  const handleOpenAttachment = useCallback(
+    async (msg: ConsultationMessage) => {
+      const attachment = getAttachmentMetadata(msg);
+      if (!attachment?.fileUrl) {
+        toast.error('Attachment URL is unavailable for this message.');
+        return;
+      }
+
+      try {
+        setOpeningAttachmentId(msg.id);
+        const presignedUrl = await repository.getPresignedGetUrl(attachment.fileUrl);
+        window.open(presignedUrl, '_blank', 'noopener,noreferrer');
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to open attachment.');
+      } finally {
+        setOpeningAttachmentId((current) => (current === msg.id ? null : current));
+      }
+    },
+    [repository]
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -118,17 +178,24 @@ export function BookingMessagesSheet({
               Failed to load messages.
             </div>
           ) : (
-            <ScrollArea className="flex-1 p-4">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4">
               <div className="flex flex-col gap-3">
                 {messages.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">
                     No messages in this consultation yet.
                   </p>
                 ) : (
-                  messages.map((msg) => <MessageBubble key={msg.id} msg={msg} />)
+                  messages.map((msg) => (
+                    <MessageBubble
+                      key={msg.id}
+                      msg={msg}
+                      onOpenAttachment={handleOpenAttachment}
+                      isOpeningAttachment={openingAttachmentId === msg.id}
+                    />
+                  ))
                 )}
               </div>
-            </ScrollArea>
+            </div>
           )}
           {!isLoading && total > 0 && (
             <p className="text-xs text-muted-foreground px-4 pb-2 shrink-0">
