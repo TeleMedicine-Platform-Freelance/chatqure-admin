@@ -1,5 +1,5 @@
-import { useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMemo, useCallback, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useService } from '@/app/providers/useDI';
 import { ADMIN_SYMBOLS } from '../../di/symbols';
@@ -24,8 +24,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/shadcn/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/shadcn/components/ui/alert-dialog';
+import { MoreHorizontal, Eye, Loader2, Trash2 } from 'lucide-react';
 import { cn } from '@/shadcn/lib/utils';
+import { toast } from 'sonner';
 
 const KYC_FILTER_OPTIONS = DOCTORS_LIST_KYC_STATUSES.map((value) => ({
   label: value.charAt(0) + value.slice(1).toLowerCase(),
@@ -41,6 +52,8 @@ export default function DoctorsPage() {
   const repository = useService<IAdminRepository>(ADMIN_SYMBOLS.IAdminRepository);
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
+  const [deletingDoctor, setDeletingDoctor] = useState<Doctor | null>(null);
 
   const {
     state: tableState,
@@ -70,6 +83,21 @@ export default function DoctorsPage() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['doctors', ...queryKeyFragment],
     queryFn: () => repository.getDoctors(apiParams),
+  });
+
+  const deleteDoctorMutation = useMutation({
+    mutationFn: (doctorId: string) => repository.deleteDoctorImmediately(doctorId),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['doctors'] });
+      if (deletingDoctor?.id) {
+        queryClient.removeQueries({ queryKey: ['doctor-details', deletingDoctor.id] });
+      }
+      setDeletingDoctor(null);
+      toast.success(result?.message || 'Doctor account deleted immediately');
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete doctor account');
+    },
   });
 
   const handleViewDetails = useCallback(
@@ -196,6 +224,14 @@ export default function DoctorsPage() {
                 <Eye className="mr-2 h-4 w-4" />
                 View Details
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setDeletingDoctor(row)}
+                className="text-destructive focus:text-destructive"
+                disabled={deleteDoctorMutation.isPending}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Immediately
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ),
@@ -251,6 +287,50 @@ export default function DoctorsPage() {
         }
       />
       </div>
+
+      <AlertDialog
+        open={!!deletingDoctor}
+        onOpenChange={(open) => {
+          if (!open && !deleteDoctorMutation.isPending) {
+            setDeletingDoctor(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete doctor account immediately?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingDoctor
+                ? `This will immediately delete ${deletingDoctor.name || deletingDoctor.phoneNumber}'s account (no 30-day grace period).`
+                : 'This will immediately delete the selected doctor account.'}
+              <span className="mt-2 block">
+                Wallet, payments, and transactions are preserved by backend rules, but account/profile access is removed.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteDoctorMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteDoctorMutation.isPending || !deletingDoctor}
+              onClick={() => {
+                if (deletingDoctor) {
+                  deleteDoctorMutation.mutate(deletingDoctor.id);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteDoctorMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete now'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageLayout>
   );
 }

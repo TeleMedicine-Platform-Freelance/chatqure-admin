@@ -247,6 +247,14 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     );
   }
 
+  async deleteDoctorImmediately(doctorId: string): Promise<{ message: string }> {
+    return this.post<{ message: string }>(
+      `/api/v1/admin/doctors/${doctorId}/delete-immediately`,
+      {},
+      'Failed to delete doctor account'
+    );
+  }
+
   async getPresignedGetUrl(documentUrl: string): Promise<string> {
     const query = `url=${encodeURIComponent(documentUrl)}`;
     const url = this.appendQuery('/api/v1/upload/presigned-get', query);
@@ -298,6 +306,14 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
       'Failed to fetch patient details'
     );
     return response.data;
+  }
+
+  async deletePatientImmediately(patientId: string): Promise<{ message: string }> {
+    return this.post<{ message: string }>(
+      `/api/v1/admin/patients/${patientId}/delete-immediately`,
+      {},
+      'Failed to delete patient account'
+    );
   }
 
   // Bookings

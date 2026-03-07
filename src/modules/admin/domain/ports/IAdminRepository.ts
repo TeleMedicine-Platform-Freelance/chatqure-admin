@@ -130,6 +130,8 @@ export interface IAdminRepository {
   suspendDoctor(doctorId: string): Promise<void>;
   
   unsuspendDoctor(doctorId: string): Promise<void>;
+
+  deleteDoctorImmediately(doctorId: string): Promise<{ message: string }>;
   
   /**
    * Get a temporary presigned URL for viewing a private document (e.g. KYC).
@@ -157,6 +159,8 @@ export interface IAdminRepository {
   }): Promise<PatientListResponse>;
 
   getPatientById(id: string): Promise<PatientDetails>;
+
+  deletePatientImmediately(patientId: string): Promise<{ message: string }>;
   
   // Bookings
   getBookings(params?: {

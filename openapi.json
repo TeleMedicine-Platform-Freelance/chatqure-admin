@@ -2298,7 +2298,7 @@
     },
     "/patient/doctors": {
       "get": {
-        "description": "Returns a paginated list of VERIFIED and ACTIVE doctors. Use for browse/find-doctor screen.\n\nQuery: specializationId (optional), page, limit. Each item includes id, name, specialization, experience, medicalApproach, languages[], profilePictureUrl, ratingAvg, ratingCount, ratePerMinute, isAvailable, isFavorite. Ordered by ratingAvg (highest first).\n\nThis endpoint is public and can be accessed without authentication.",
+        "description": "Returns a paginated list of VERIFIED and ACTIVE doctors who have set their rate (ratePerMinute). Doctors without a set rate are excluded. Use for browse/find-doctor screen.\n\nQuery: specializationId (optional), page, limit. Each item includes id, name, specialization, experience, medicalApproach, languages[], profilePictureUrl, ratingAvg, ratingCount, ratePerMinute, isAvailable, isFavorite. Ordered by ratingAvg (highest first).\n\nThis endpoint is public and can be accessed without authentication.",
         "operationId": "PatientController_searchDoctors",
         "parameters": [
           {
@@ -2500,7 +2500,7 @@
     },
     "/patient/doctors/{id}": {
       "get": {
-        "description": "Single doctor profile for the detail screen (e.g. when patient taps a doctor card). Only VERIFIED and ACTIVE doctors; otherwise data is null.\n\nResponse includes: id, name, specialization, experience, ratingAvg, ratingCount, totalPatients (distinct patients from consultations that actually started), ratePerMinute, currentWorkplace, profilePictureUrl, languages[], medicalApproach, about, photoUrls[], isAvailable, isFavorite.",
+        "description": "Single doctor profile for the detail screen (e.g. when patient taps a doctor card). Only VERIFIED, ACTIVE doctors who have set ratePerMinute are returned; otherwise data is null.\n\nResponse includes: id, name, specialization, experience, ratingAvg, ratingCount, totalPatients (distinct patients from consultations that actually started), ratePerMinute, currentWorkplace, profilePictureUrl, languages[], medicalApproach, about, photoUrls[], isAvailable, isFavorite.",
         "operationId": "PatientController_getDoctorDetails",
         "parameters": [
           {
@@ -2760,7 +2760,7 @@
     },
     "/patient/favorites": {
       "get": {
-        "description": "Returns the list of doctors favorited by the authenticated patient. Only VERIFIED and ACTIVE doctors are included. Each item includes id, name, specialization, experience, medicalApproach, languages[], profilePictureUrl, ratingAvg, ratingCount, ratePerMinute, isAvailable, isFavorite.",
+        "description": "Returns the list of doctors favorited by the authenticated patient. Only VERIFIED, ACTIVE doctors who have set ratePerMinute are included. Each item includes id, name, specialization, experience, medicalApproach, languages[], profilePictureUrl, ratingAvg, ratingCount, ratePerMinute, isAvailable, isFavorite.",
         "operationId": "PatientController_listFavoriteDoctors",
         "parameters": [],
         "responses": {
@@ -2788,7 +2788,7 @@
     },
     "/patient/doctors/by-symptom/{symptomId}": {
       "get": {
-        "description": "Returns doctors whose specializations are mapped to the given symptom. Only VERIFIED and ACTIVE doctors are returned. This endpoint is public and can be accessed without authentication.",
+        "description": "Returns doctors whose specializations are mapped to the given symptom. Only VERIFIED, ACTIVE doctors who have set ratePerMinute are returned. This endpoint is public and can be accessed without authentication.",
         "operationId": "PatientController_getDoctorsBySymptom",
         "parameters": [
           {
@@ -9105,6 +9105,81 @@
         ]
       }
     },
+    "/admin/doctors/{id}/delete-immediately": {
+      "post": {
+        "description": "Finalises account deletion immediately (no 30-day grace period). Uses the same logic as scheduled deletion: invalidate sessions, mark DELETED, anonymise doctor profile. Wallet/payments/transactions are preserved. Returns 404 if the account is not a doctor.",
+        "operationId": "AdminDoctorsController_deleteDoctorImmediately",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Doctor account ID (UUID)",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Doctor account deleted immediately",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Doctor account deleted immediately"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing JWT"
+          },
+          "403": {
+            "description": "Requires ADMIN role"
+          },
+          "404": {
+            "description": "Doctor not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "DOCTOR_NOT_FOUND"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Doctor not found"
+                    },
+                    "statusCode": {
+                      "type": "number",
+                      "example": 404
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Immediately delete doctor account",
+        "tags": [
+          "Admin - Doctors"
+        ]
+      }
+    },
     "/admin/doctors/{id}/suspend": {
       "put": {
         "description": "Temporarily blocks the doctor: sets account status to SUSPENDED and logs them out. They cannot use the app until an admin unsuspends them.",
@@ -9428,6 +9503,81 @@
           }
         ],
         "summary": "Get patient detail",
+        "tags": [
+          "Admin - Patients"
+        ]
+      }
+    },
+    "/admin/patients/{id}/delete-immediately": {
+      "post": {
+        "description": "Finalises account deletion immediately (no 30-day grace period). Uses the same logic as scheduled deletion: invalidate sessions, mark DELETED, anonymise patient profile. Wallet/payments/transactions are preserved. Returns 404 if the account is not a patient.",
+        "operationId": "AdminPatientsController_deletePatientImmediately",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Patient account ID (UUID)",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Patient account deleted immediately",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Patient account deleted immediately"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing JWT"
+          },
+          "403": {
+            "description": "Requires ADMIN role"
+          },
+          "404": {
+            "description": "Patient not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "PATIENT_NOT_FOUND"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Patient not found"
+                    },
+                    "statusCode": {
+                      "type": "number",
+                      "example": 404
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Immediately delete patient account",
         "tags": [
           "Admin - Patients"
         ]
