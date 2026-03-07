@@ -25,7 +25,7 @@ export interface Doctor {
   name: string; // Included in list response
   phoneNumber: string;
   tokenNumber: string | null;
-  accountStatus: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  accountStatus: 'ACTIVE' | 'SUSPENDED' | 'PENDING_DELETION' | 'DELETED';
   kycStatus: 'PENDING' | 'SUBMITTED' | 'VERIFIED' | 'REJECTED' | 'EXPIRED';
   specialization: string | Specialization | null; // In list response (string in list, Specialization in details)
   ratingAvg: number | string | null; // number in list, string in details response

@@ -623,7 +623,7 @@ export default function DoctorDetailsPage() {
               </div>
             )}
 
-            {selectedSection === 'basic' && (
+            {selectedSection === 'basic' && doctor.accountStatus !== 'DELETED' && doctor.accountStatus !== 'PENDING_DELETION' && (
               <div className="flex flex-col sm:flex-row gap-2 pt-6 mt-6 border-t">
                 {doctor.accountStatus === 'SUSPENDED' ? (
                   <Button
