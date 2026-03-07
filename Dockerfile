@@ -13,7 +13,7 @@ COPY . .
 # Build-time env (Vite inlines these at build)
 ARG VITE_APP_NAME=Chatqure Admin Panel
 ARG VITE_APP_ENVIRONMENT=production
-ARG VITE_API_BASE_URL=https://stagingapi.chatqure.com/
+ARG VITE_API_BASE_URL=https://api.chatqure.com/
 ARG VITE_API_TIMEOUT=30000
 ARG VITE_AUTH_LOGIN_PATH=/auth/login
 ARG VITE_AUTH_TOKEN_KEY=chatqure_admin_auth_token

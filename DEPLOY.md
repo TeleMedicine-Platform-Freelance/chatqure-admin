@@ -1,9 +1,9 @@
 # Deploy chatqure-admin to server (stagingadmin.chatqure.com)
 
-**Same server as staging API:** This app runs on port **8080** so it doesn’t conflict with the container that serves `stagingapi.chatqure.com`. You need a **reverse proxy** on the host (nginx, Caddy, or Traefik) that listens on 80/443 and routes:
+**Same server as staging API:** This app runs on port **8080** so it doesn’t conflict with the container that serves `api.chatqure.com`. You need a **reverse proxy** on the host (nginx, Caddy, or Traefik) that listens on 80/443 and routes:
 
-- `stagingapi.chatqure.com` → your API container (existing)
-- `stagingadmin.chatqure.com` → `http://127.0.0.1:8080` (this app)
+- `api.chatqure.com` → your API container (existing)
+- `admin.chatqure.com` → `http://127.0.0.1:8080` (this app)
 
 ---
 
@@ -60,7 +60,7 @@ cp .env.example .env
 nano .env   # set VITE_API_BASE_URL etc. if needed
 ```
 
-If you don’t create `.env`, the defaults in `docker-compose.yml` (e.g. `https://stagingapi.chatqure.com/`) are used.
+If you don’t create `.env`, the defaults in `docker-compose.yml` (e.g. `https://api.chatqure.com/`) are used.
 
 ---
 
