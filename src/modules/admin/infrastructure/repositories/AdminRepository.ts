@@ -437,6 +437,15 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     );
   }
 
+  async downloadPayoutRequestsCsv(status?: string): Promise<Blob> {
+    const query = this.buildQueryString(status ? { status } : {});
+    const url = this.appendQuery('/api/v1/admin/payout/requests/export', query);
+    const response = await (this.http as any).axiosInstance.get(url, {
+      responseType: 'blob',
+    });
+    return response.data as Blob;
+  }
+
   // Payments
   async getPayments(params?: {
     page?: number;

@@ -128,14 +128,22 @@ export default function PayoutRequestsPage() {
     markProcessingMutation.mutate(id);
   };
 
-  const handleExportRequested = () => {
+  const handleExportRequested = async () => {
+    setIsExporting(true);
     try {
-      setIsExporting(true);
-      const url = '/api/v1/admin/payout/requests/export?status=REQUESTED';
-      window.open(url, '_blank', 'noopener,noreferrer');
+      const blob = await (repository as any).downloadPayoutRequestsCsv('REQUESTED');
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'payout-requests-requested.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to export payout requests CSV');
     } finally {
-      // No reliable callback from window.open; reset quickly
-      setTimeout(() => setIsExporting(false), 1000);
+      setIsExporting(false);
     }
   };
 
