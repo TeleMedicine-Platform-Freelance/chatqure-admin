@@ -202,6 +202,8 @@ export interface IAdminRepository {
   getPayoutRequest(id: string): Promise<any>;
   approvePayoutRequest(id: string): Promise<{ message: string }>;
   rejectPayoutRequest(id: string, reason: string): Promise<{ message: string }>;
+  markPayoutRequestProcessing(id: string): Promise<{ message: string }>;
+  bulkMarkRequestedPayoutsProcessing(): Promise<{ updated: number }>;
   
   // Payments
   getPayments(params?: {

@@ -421,6 +421,22 @@ export class AdminRepository extends BaseRepository implements IAdminRepository 
     );
   }
 
+  async markPayoutRequestProcessing(id: string): Promise<{ message: string }> {
+    return this.post<{ message: string }>(
+      `/api/v1/admin/payout/requests/${id}/processing`,
+      {},
+      'Failed to mark payout request as processing'
+    );
+  }
+
+  async bulkMarkRequestedPayoutsProcessing(): Promise<{ updated: number }> {
+    return this.post<{ updated: number }>(
+      '/api/v1/admin/payout/requests/mark-processing',
+      {},
+      'Failed to mark payout requests as processing'
+    );
+  }
+
   // Payments
   async getPayments(params?: {
     page?: number;

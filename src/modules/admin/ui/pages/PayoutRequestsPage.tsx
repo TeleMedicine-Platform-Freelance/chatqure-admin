@@ -36,6 +36,7 @@ export default function PayoutRequestsPage() {
   const [actingId, setActingId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['payout-requests', pagination],
@@ -83,6 +84,33 @@ export default function PayoutRequestsPage() {
     onSettled: () => setActingId(null),
   });
 
+  const markProcessingMutation = useMutation({
+    mutationFn: (id: string) => repository.markPayoutRequestProcessing(id),
+    onSuccess: () => {
+      toast.success('Payout request marked as PROCESSING');
+      queryClient.invalidateQueries({ queryKey: ['payout-requests'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Failed to mark payout request as processing');
+    },
+    onSettled: () => setActingId(null),
+  });
+
+  const bulkMarkProcessingMutation = useMutation({
+    mutationFn: () => repository.bulkMarkRequestedPayoutsProcessing(),
+    onSuccess: (result) => {
+      toast.success(
+        result.updated > 0
+          ? `Marked ${result.updated} payout request(s) as PROCESSING`
+          : 'No REQUESTED payout requests to update'
+      );
+      queryClient.invalidateQueries({ queryKey: ['payout-requests'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Failed to bulk mark payout requests as processing');
+    },
+  });
+
   const handleApprove = (id: string) => {
     setActingId(id);
     approveMutation.mutate(id);
@@ -93,6 +121,22 @@ export default function PayoutRequestsPage() {
     if (reason === null) return;
     setActingId(id);
     rejectMutation.mutate({ id, reason: reason.trim() || 'Rejected by admin' });
+  };
+
+  const handleMarkProcessing = (id: string) => {
+    setActingId(id);
+    markProcessingMutation.mutate(id);
+  };
+
+  const handleExportRequested = () => {
+    try {
+      setIsExporting(true);
+      const url = '/api/v1/admin/payout/requests/export?status=REQUESTED';
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } finally {
+      // No reliable callback from window.open; reset quickly
+      setTimeout(() => setIsExporting(false), 1000);
+    }
   };
 
   const handleOpenDetails = (id: string) => {
@@ -196,7 +240,11 @@ export default function PayoutRequestsPage() {
               </Button>
             );
           }
-          const isActing = actingId === row.id && (approveMutation.isPending || rejectMutation.isPending);
+          const isActing =
+            actingId === row.id &&
+            (approveMutation.isPending ||
+              rejectMutation.isPending ||
+              markProcessingMutation.isPending);
           return (
             <div className="flex items-center gap-2">
               <Button
@@ -205,6 +253,18 @@ export default function PayoutRequestsPage() {
                 onClick={() => handleOpenDetails(row.id)}
               >
                 View
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleMarkProcessing(row.id)}
+                disabled={markProcessingMutation.isPending || isActing}
+              >
+                {isActing && markProcessingMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <span className="text-xs font-medium">Processing</span>
+                )}
               </Button>
               <Button
                 variant="outline"
@@ -247,6 +307,33 @@ export default function PayoutRequestsPage() {
       gap="md"
     >
       <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportRequested}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Export REQUESTED as CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => bulkMarkProcessingMutation.mutate()}
+              disabled={bulkMarkProcessingMutation.isPending}
+            >
+              {bulkMarkProcessingMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Mark all REQUESTED as PROCESSING
+            </Button>
+          </div>
+        </div>
+
         <DataTable
         columns={columns}
         data={data?.data || []}
